@@ -5518,8 +5518,8 @@ let menuItems = [
             {
                 cardId: 'webinfo',
                 title: `Website Info`,
-                subtitle: `Updated: ${lastUpdated}<br>
-                        Version: ${version}<br>
+                subtitle: `
+                        Based on version: ${version}<br>
                         <br>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalCardsCounter"></div>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalMenusCounter"></div>
@@ -5536,11 +5536,11 @@ let menuItems = [
                 cardId: 'credits',
                 title: `Credits`,
                 subtitle: `
-                        Developed by:<br>
+                        Creeated by:<br>
                         Artifyber<br>
                         <br>
-                        Special thanks:<br>
-                        Azka "Artist" Zavian
+                        Forked by:<br>
+                        Jonaykon
                 `,
                 banner: true,
                 unclickable: true,
