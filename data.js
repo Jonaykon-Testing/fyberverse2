@@ -1246,6 +1246,26 @@ let menuItems = [
                 image: 'images/i/artidragon-i.png',
             },
             {
+                cardId: 'willow',
+                title: 'Willow',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Lamp Cat',
+                cPronouns: 'They',
+                cGender: 'Non-Binary',
+                cSexuality: 'Lesbian',
+                cNicknames: '',
+                cAddOns: '',
+                cReference: '',
+                cGallery: [
+                    'images/c/willow-c.png',
+                ],
+
+                image: 'images/i/willow-i.png',
+            },
+            {
                 cardId: 'hana',
                 title: 'Hana',
                 subtitle: '',
