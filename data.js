@@ -369,7 +369,7 @@ let menuItems = [
                 reference: 'deltadim-teksui:artilope',
             },
             {
-                reference: 'deltadim-chromasia:shirley',
+                reference: 'deltadim-missing:shirley',
             },
         ]
     },
@@ -1246,74 +1246,6 @@ let menuItems = [
                 image: 'images/i/artidragon-i.png',
             },
             {
-                cardId: 'shirley',
-                title: 'Shirley',
-                subtitle: '',
-                detail: `
-                Shirley is an orange cat-fox hybrid with white fur on her ears, muzzle, chest, abdomen, and the tip of her tail. Her eyes are yellow and her pawpads and inner ears are orange.<br>
-                <br>
-                She lives with her boyfriend Rose, and works as a barista at a local cafe in Chromasia. She also loves gardening and taking care of pretty flowers.`,
-
-                isCharacter: true,
-                cSpecies: 'Cat + Fox',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Manda, Alamanda',
-                cAddOns: '',
-                cReference: 'images/r/shirley-r.png',
-                cGallery: [
-                    'images/c/shirley-c.png',
-                    'images/c/shirley-c2.png',
-                    'images/c/shirley-c3.png',
-                    'images/c/shirley-c4.png',
-                    'images/c/shirley-c5.png',
-                    'images/c/shirley-c6.png',
-                ],
-                cRelations: [
-                    {
-                        cardId: 'deltadim-chromasia:rose',
-                        relation: 'Significant Other'
-                    },
-                ],
-
-                image: 'images/i/shirley-i.png',
-            },
-            {
-                cardId: 'rose',
-                title: 'Rose',
-                subtitle: '',
-                detail: `
-                Rose is a green fox with red fur covering his head and tail, and dark green neck fur. In fact, his color schemes and fur patterns look like a typical rose flower.<br>
-                <br>
-                Rose really likes the color pink. He can often be seen wearing pink sweaters and skirts or trousers. He doesn't mind being called cute or pretty despite being a male.<br>
-                <br>
-                He works as a farmer in Chromasia, growing various kinds of crops to sell at the local market.`,
-
-                isCharacter: true,
-                cSpecies: 'Fox',
-                cPronouns: 'He/Any',
-                cGender: 'Male',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Rosey',
-                cAddOns: '',
-                cReference: 'images/r/rose-r.png',
-                cGallery: [
-                    'images/c/rose-c.png',
-                    'images/c/rose-c2.png',
-                    'images/c/rose-c3.png',
-                    'images/c/rose-c4.png',
-                ],
-                cRelations: [
-                    {
-                        cardId: 'deltadim-chromasia:shirley',
-                        relation: 'Significant Other'
-                    },
-                ],
-
-                image: 'images/i/rose-i.png',
-            },
-            {
                 cardId: 'hana',
                 title: 'Hana',
                 subtitle: '',
@@ -2149,6 +2081,74 @@ let menuItems = [
                 cReference: '',
                 cGallery: [],
                 image: 'images/i/ashy.png'
+            },
+            {
+                cardId: 'shirley',
+                title: 'Shirley',
+                subtitle: '',
+                detail: `
+                Shirley is an orange cat-fox hybrid with white fur on her ears, muzzle, chest, abdomen, and the tip of her tail. Her eyes are yellow and her pawpads and inner ears are orange.<br>
+                <br>
+                She lives with her boyfriend Rose, and works as a barista at a local cafe in Chromasia. She also loves gardening and taking care of pretty flowers.`,
+
+                isCharacter: true,
+                cSpecies: 'Cat + Fox',
+                cPronouns: 'She',
+                cGender: 'Female',
+                cSexuality: 'Heterosexual',
+                cNicknames: 'Manda, Alamanda',
+                cAddOns: '',
+                cReference: 'images/r/shirley-r.png',
+                cGallery: [
+                    'images/c/shirley-c.png',
+                    'images/c/shirley-c2.png',
+                    'images/c/shirley-c3.png',
+                    'images/c/shirley-c4.png',
+                    'images/c/shirley-c5.png',
+                    'images/c/shirley-c6.png',
+                ],
+                cRelations: [
+                    {
+                        cardId: 'deltadim-missing:rose',
+                        relation: 'Significant Other'
+                    },
+                ],
+
+                image: 'images/i/shirley-i.png',
+            },
+            {
+                cardId: 'rose',
+                title: 'Rose',
+                subtitle: '',
+                detail: `
+                Rose is a green fox with red fur covering his head and tail, and dark green neck fur. In fact, his color schemes and fur patterns look like a typical rose flower.<br>
+                <br>
+                Rose really likes the color pink. He can often be seen wearing pink sweaters and skirts or trousers. He doesn't mind being called cute or pretty despite being a male.<br>
+                <br>
+                He works as a farmer in Chromasia, growing various kinds of crops to sell at the local market.`,
+
+                isCharacter: true,
+                cSpecies: 'Fox',
+                cPronouns: 'He/Any',
+                cGender: 'Male',
+                cSexuality: 'Heterosexual',
+                cNicknames: 'Rosey',
+                cAddOns: '',
+                cReference: 'images/r/rose-r.png',
+                cGallery: [
+                    'images/c/rose-c.png',
+                    'images/c/rose-c2.png',
+                    'images/c/rose-c3.png',
+                    'images/c/rose-c4.png',
+                ],
+                cRelations: [
+                    {
+                        cardId: 'deltadim-missing:shirley',
+                        relation: 'Significant Other'
+                    },
+                ],
+
+                image: 'images/i/rose-i.png',
             },
         ]
     },
