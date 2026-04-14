@@ -5171,6 +5171,76 @@ let menuItems = [
                     `,
                 image: 'icons/zenpen.png'
             },
+            {
+                cardId: 'squaracters',
+                title: 'Squaracters',
+                subtitle: 'Convert Latin to Squaracters',
+                detail:
+                    `
+                    <a href="https://fontstruct.com/fontstructions/show/2768650/squaracters" target="_blank">Download Squaracters Font</a><br><br>
+                    <h2>Latin to Squaracters</h2>
+                    Latin input
+                    <div style="margin-top:10px;">
+                        <textarea id="squaractersInput" rows="4" style="width:100%;"></textarea>
+                    </div>
+                    <br>
+                    Squaracters output
+                    <div style="margin-top:10px;">
+                        <textarea id="squaractersOutput" rows="4" style="width:100%;" readonly></textarea>
+                    </div>
+
+                    <br><br><hr>
+                    
+                    <h2>Squaracters to Latin</h2>
+                    Squaracters input
+                    <div style="margin-top:10px;">
+                        <textarea id="squaractersInputRev" class="squaracters" rows="2" style="width:100%;" readonly></textarea>
+                    </div>
+                    <br>
+                    <button id="copySquaractersRevBtn" type="button">Copy</button> -  latin output<br>
+                    <div style="margin-top:10px;">
+                        <textarea id="squaractersOutputRev" rows="2" style="width:100%;" readonly></textarea>
+                    </div>
+                    <br>
+                    <div class="keyboardLayout" style="margin-top:10px;">
+                        <button type="button" class="keycap squaractersKeys" data-key="DEL">DEL</button>
+                        <button type="button" class="keycap squaractersKeys" data-key="CLR">CLR</button>
+                        <button type="button" class="keycap squaractersKeys" data-key=" ">SPACE</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="A">A</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="B">B</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="C">C</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="D">D</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="E">E</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="F">F</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="G">G</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="H">H</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="I">I</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="J">J</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="K">K</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="L">L</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="M">M</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="N">N</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="O">O</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="P">P</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="Q">Q</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="R">R</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="S">S</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="T">T</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="U">U</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="V">V</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="W">W</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="X">X</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="Y">Y</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="Z">Z</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="0">0</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="1">1</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="2">2</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="3">3</button>
+                        <button type="button" class="keycap squaracters squaractersKeys" data-key="4">4</button>
+                    </div>
+                    `,
+                image: 'icons/squaracters.png'
+            },
         ]
     },
     {
@@ -5665,11 +5735,15 @@ let menuItems = [
                 cardId: 'credits',
                 title: `Credits`,
                 subtitle: `
-                        Creeated by:<br>
-                        Artifyber<br>
-                        <br>
-                        Forked by:<br>
-                        Jonaykon
+                    Created by:<br>
+                    Artifyber<br>
+                    <br>
+                    Forked by:<br>
+                    Jonaykon<br>
+                    <br>
+                    <a href="https://fontstruct.com/fontstructions/show/2768650/squaracters">Squaracters font</a>:<br>
+                    Made by: <a href="https://fontstruct.com/fontstructors/2329103/maxy-dev">maxy_dev</a><br>
+                    Licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>
                 `,
                 banner: true,
                 unclickable: true,

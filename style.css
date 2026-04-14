@@ -198,6 +198,13 @@
     src: url(fonts/zenpen.ttf) format('truetype');
 }
 
+@font-face {
+    font-family: 'squaracters';
+    font-weight: 800;
+    font-display: swap;
+    src: url(fonts/squaracters.ttf) format('truetype');
+}
+
 
 
 
@@ -1271,6 +1278,16 @@ textarea#nadiruneOutput {
 
 textarea#zenpenOutput {
     font-family: zenpen, Main, Ubuntu, verdana, sans-serif;
+    font-size: 1.5rem;
+}
+
+.squaracters {
+    font-family: squaracters, Main, Ubuntu, verdana, sans-serif;
+    font-size: 2rem;
+}
+
+textarea#squaractersOutput {
+    font-family: squaracters, Main, Ubuntu, verdana, sans-serif;
     font-size: 1.5rem;
 }
 
