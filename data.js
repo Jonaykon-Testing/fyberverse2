@@ -308,6 +308,9 @@ let menuItems = [
             },
         ]
     },
+
+
+
     {
         // Deltadim
         title: 'Deltadim',
@@ -342,6 +345,9 @@ let menuItems = [
             },
             {
                 linkId: 'deltadim-deltaspace',
+            },
+            {
+                linkId: 'deltadim-missing',
             },
             {
                 title: 'Pinned',
@@ -2020,6 +2026,129 @@ let menuItems = [
                 cGallery: [],
 
                 image: 'images/i/ichor-i.png',
+            },
+        ]
+    },
+    {
+        menuId: 'deltadim-missing',
+        title: 'Missing',
+        subtitle: 'Erased from the timeline',
+        image: 'images/missing.png',
+        color: '#BFBFBF',
+        parent: 'deltadim',
+        hidden: true,
+        labels: [
+            {
+                cardId: 'iafo',
+                title: 'I.A.F.O',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: '',
+                cPronouns: '',
+                cGender: '',
+                cSexuality: '',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/iafo.png'
+            },
+            {
+                cardId: 'corinne',
+                title: 'Corinne',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: '',
+                cPronouns: '',
+                cGender: '',
+                cSexuality: '',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/corinne.png'
+            },
+            {
+                cardId: 'neelo',
+                title: 'Neelo',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: 'Lemon cat',
+                cPronouns: 'He/Them',
+                cGender: 'Male',
+                cSexuality: 'Bisexual',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/neelo.png'
+            },
+            {
+                cardId: 'nala',
+                title: 'Nala',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: 'Bunny',
+                cPronouns: 'She/He/Any',
+                cGender: 'Trans-female',
+                cSexuality: 'Bisexual',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/nala.png'
+            },
+            {
+                cardId: 'ithi',
+                title: 'Ithi',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: 'Robunny',
+                cPronouns: 'She/Any',
+                cGender: 'Female',
+                cSexuality: 'Asexual',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/ithi.png'
+            },
+            {
+                cardId: 'yolk',
+                title: 'Yolk',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: 'Macroscopic single-celled organism',
+                cPronouns: 'They/She/Any',
+                cGender: 'Genderless',
+                cSexuality: 'Aroace',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/yolk.png'
+            },
+            {
+                cardId: 'ashy',
+                title: 'Ashy',
+                subtitle: '',
+                cAddOns: ``,
+                detail: ``,
+                isCharacter: true,
+                cSpecies: '',
+                cPronouns: '',
+                cGender: '',
+                cSexuality: '',
+                cNicknames: '',
+                cReference: '',
+                cGallery: [],
+                image: 'images/i/ashy.png'
             },
         ]
     },
