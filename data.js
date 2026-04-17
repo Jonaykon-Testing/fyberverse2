@@ -5399,13 +5399,6 @@ let menuItems = [
                 image: 'icons/l-twitter.png'
             },
             {
-                cardId: 'instagram',
-                title: 'Instagram',
-                subtitle: '',
-                url: 'https://instagram.com/artifyber',
-                image: 'icons/l-instagram.png'
-            },
-            {
                 cardId: 'bluesky',
                 title: 'BlueSky',
                 subtitle: '',
@@ -5420,25 +5413,18 @@ let menuItems = [
                 image: 'icons/l-discord.png'
             },
             {
+                cardId: 'instagram',
+                title: 'Instagram',
+                subtitle: '',
+                url: 'https://instagram.com/artifyber',
+                image: 'icons/l-instagram.png'
+            },
+            {
                 cardId: 'youtube',
                 title: 'YouTube',
                 subtitle: '',
                 url: 'https://youtube.com/@artifyber',
                 image: 'icons/l-youtube.png'
-            },
-            {
-                cardId: 'spotify',
-                title: 'Spotify Artist',
-                subtitle: '',
-                url: 'https://open.spotify.com/intl-id/artist/41B16M5LFJKcwUW3L75PVh',
-                image: 'icons/l-spotify.png'
-            },
-            {
-                cardId: 'newgrounds',
-                title: 'Newgrounds',
-                subtitle: '',
-                url: 'https://artifyber.newgrounds.com/',
-                image: 'icons/l-newgrounds.png'
             },
             {
                 cardId: 'soundcloud',
@@ -5448,11 +5434,25 @@ let menuItems = [
                 image: 'icons/l-soundcloud.png'
             },
             {
-                cardId: 'toyhouse',
-                title: 'Toyhouse',
+                cardId: 'newgrounds',
+                title: 'Newgrounds',
                 subtitle: '',
-                url: 'https://toyhou.se/artifyber',
-                image: 'icons/l-toyhouse.png'
+                url: 'https://artifyber.newgrounds.com/',
+                image: 'icons/l-newgrounds.png'
+            },
+            {
+                cardId: 'spotify',
+                title: 'Spotify Artist',
+                subtitle: '',
+                url: 'https://open.spotify.com/intl-id/artist/41B16M5LFJKcwUW3L75PVh',
+                image: 'icons/l-spotify.png'
+            },
+            {
+                cardId: 'bandcamp',
+                title: 'Bandcamp',
+                subtitle: '',
+                url: 'https://artifyber.bandcamp.com',
+                image: 'icons/l-bandcamp.png'
             },
             {
                 cardId: 'carrd',
@@ -5460,6 +5460,13 @@ let menuItems = [
                 subtitle: 'Backup website just in case',
                 url: 'https://artifyber.carrd.co/',
                 image: 'icons/l-carrd.png'
+            },
+            {
+                cardId: 'toyhouse',
+                title: 'Toyhouse',
+                subtitle: '',
+                url: 'https://toyhou.se/artifyber',
+                image: 'icons/l-toyhouse.png'
             },
             {
                 cardId: 'kofi',
@@ -5485,6 +5492,7 @@ let menuItems = [
                 <br>
                 Artyfiber:<br>
                 <a href="https://x.com/artyfiber" target="_blank">Twitter</a><br>
+                <a href="https://www.youtube.com/@artyfiber" target="_blank">YouTube</a><br>
                 <br>
                 `,
                 image: 'icons/l-others.png'
