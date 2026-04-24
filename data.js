@@ -4245,6 +4245,26 @@ let menuItems = [
                 image: 'images/i/cherry-i.png',
             },
             {
+                cardId: 'blurplebun',
+                title: 'Blurplebun',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Rabbit',
+                cPronouns: 'She/They',
+                cGender: 'Female',
+                cSexuality: 'Asexual',
+                cNicknames: '',
+                cAddOns: '',
+                cReference: '',
+                cGallery: [
+                    'images/c/blurplebun-c.png',
+                ],
+
+                image: 'images/i/blurplebun-i.png',
+            },
+            {
                 cardId: 'ebta',
                 title: 'Ebta',
                 subtitle: '',
