@@ -4765,6 +4765,26 @@ let menuItems = [
 
                 image: 'images/i/cupid-i.png',
             },
+            {
+                cardId: 'kasi',
+                title: 'Kasi',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Polygon',
+                cPronouns: 'They',
+                cGender: 'Non-Binary',
+                cSexuality: 'Bisexual',
+                cNicknames: '',
+                cAddOns: '',
+                cReference: '',
+                cGallery: [
+                    'images/c/kasi-c.png',
+                ],
+
+                image: 'images/i/kasi-i.png',
+            },
         ]
     },
 
