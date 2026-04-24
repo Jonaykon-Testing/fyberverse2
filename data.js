@@ -666,26 +666,6 @@ let menuItems = [
                 image: 'images/i/artineko-i.png',
             },
             {
-                cardId: 'artimoth',
-                title: 'Artimoth',
-                subtitle: '',
-                detail: '',
-
-                isCharacter: true,
-                cSpecies: 'Moth',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Mothy',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/artimoth-c.png'
-                ],
-
-                image: 'images/i/artimoth-i.png',
-            },
-            {
                 cardId: 'eros',
                 title: 'Eros',
                 subtitle: '',
@@ -2169,6 +2149,26 @@ let menuItems = [
                 ],
 
                 image: 'images/i/rose-i.png',
+            },
+            {
+                cardId: 'artimoth',
+                title: 'Artimoth',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Moth',
+                cPronouns: 'He/They',
+                cGender: 'Male',
+                cSexuality: 'Bisexual',
+                cNicknames: 'Arti, Mothy',
+                cAddOns: '',
+                cReference: '',
+                cGallery: [
+                    'images/c/artimoth-c.png'
+                ],
+
+                image: 'images/i/artimoth-i.png',
             },
         ]
     },
