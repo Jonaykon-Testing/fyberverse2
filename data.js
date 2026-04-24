@@ -4745,6 +4745,26 @@ let menuItems = [
 
                 image: 'images/i/lyne-i.png',
             },
+            {
+                cardId: 'cupid',
+                title: 'Cupid',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Polygon',
+                cPronouns: 'They',
+                cGender: 'Non-Binary',
+                cSexuality: 'Pansexual',
+                cNicknames: '',
+                cAddOns: '',
+                cReference: '',
+                cGallery: [
+                    'images/c/cupid-c.png',
+                ],
+
+                image: 'images/i/cupid-i.png',
+            },
         ]
     },
 
