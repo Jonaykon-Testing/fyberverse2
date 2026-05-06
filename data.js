@@ -2150,26 +2150,6 @@ let menuItems = [
 
                 image: 'images/i/rose-i.png',
             },
-            {
-                cardId: 'artimoth',
-                title: 'Artimoth',
-                subtitle: '',
-                detail: '',
-
-                isCharacter: true,
-                cSpecies: 'Moth',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Mothy',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/artimoth-c.png'
-                ],
-
-                image: 'images/i/artimoth-i.png',
-            },
         ]
     },
 
@@ -4723,6 +4703,26 @@ let menuItems = [
                 ],
 
                 image: 'images/i/nim-i.png',
+            },
+            {
+                cardId: 'artimoth',
+                title: 'Artimoth',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Moth',
+                cPronouns: 'He/They',
+                cGender: 'Male',
+                cSexuality: 'Bisexual',
+                cNicknames: 'Arti, Mothy',
+                cAddOns: '',
+                cReference: '',
+                cGallery: [
+                    'images/c/artimoth-c.png'
+                ],
+
+                image: 'images/i/artimoth-i.png',
             },
             {
                 cardId: 'awan',
