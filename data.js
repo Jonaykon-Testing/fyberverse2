@@ -4329,6 +4329,26 @@ let menuItems = [
                 image: 'images/i/placeholder-i.png',
             },
             {
+                cardId: 'kay',
+                title: 'Kay',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                cSpecies: 'Fennec',
+                cPronouns: 'She/They',
+                cGender: 'Female',
+                cSexuality: 'Heterosexual',
+                cNicknames: '',
+                cAddOns: 'Adopted from <a href="https://x.com/Kaylaniakea" target="_blank">Kaylaniakea</a>',
+                cReference: '',
+                cGallery: [
+                    'images/c/kay-c.png',
+                ],
+
+                image: 'images/i/kay-i.png',
+            },
+            {
                 cardId: 'usbun',
                 title: 'USBun',
                 subtitle: '',
