@@ -33,6 +33,7 @@ jobs:
                       https://artifyber.xyz
 
             - name: Commit changes with version
+              id: commit
               run: |
                   git config user.name "github-actions"
                   git config user.email "actions@github.com"
@@ -41,5 +42,17 @@ jobs:
 
                   git add .
                   git diff --cached --quiet && exit 0
+
                   git commit -m "Update to v$VERSION"
                   git push origin HEAD:artifyber.xyz
+
+                  echo "changed=true" >> "$GITHUB_OUTPUT"
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+            - name: Send Discord webhook
+              if: steps.commit.outputs.changed == 'true'
+              run: |
+                  curl -H "Content-Type: application/json" \
+                      -X POST \
+                      -d "{\"content\":\"artifyber.xyz updated to v${{ steps.commit.outputs.version }}\"}" \
+                      https://discord.com/api/webhooks/1504884619479351447/nxNpcdhy_BKh5h1vENeDhGncd67wgRaSg4UyepkL29EoQtbLvFir9rxNgMrC41bkbCVF
