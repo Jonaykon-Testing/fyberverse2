@@ -1,8 +1,8 @@
 {
   "name": "Fyberverse",
   "short_name": "Fyberverse",
-  "start_url": "/Fyberverse/?source=pwa",
-  "scope": "/Fyberverse/",
+  "start_url": "/fyberverse/?source=pwa",
+  "scope": "/fyberverse/",
   "display": "standalone",
   "background_color": "#0d1120",
   "theme_color": "#C894F9",
