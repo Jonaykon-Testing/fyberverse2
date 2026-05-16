@@ -18,9 +18,6 @@ jobs:
               with:
                   ref: artifyber.xyz
 
-            - name: Clean old files
-              run: rm -rf *
-
             - name: Mirror site
               run: |
                   wget \
