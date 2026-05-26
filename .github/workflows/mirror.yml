@@ -21,12 +21,17 @@ jobs:
             - name: Mirror site
               run: |
                   wget \
-                      --mirror \
+                      --recursive \
+                      --no-parent \
                       --convert-links \
                       --adjust-extension \
                       --page-requisites \
-                      --no-parent \
-                      -nH \
+                      --no-cache \
+                      --no-http-keep-alive \
+                      --header="Cache-Control: no-cache" \
+                      --no-host-directories \
+                      --cut-dirs=0 \
+                      -P . \
                       https://artifyber.xyz
 
             - name: Commit changes with version
