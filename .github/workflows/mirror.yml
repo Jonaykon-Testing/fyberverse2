@@ -57,4 +57,4 @@ jobs:
                   curl -H "Content-Type: application/json" \
                       -X POST \
                       -d "{\"content\":\"artifyber.xyz updated to v${{ steps.commit.outputs.version }}\"}" \
-                      https://discord.com/api/webhooks/1504884619479351447/nxNpcdhy_BKh5h1vENeDhGncd67wgRaSg4UyepkL29EoQtbLvFir9rxNgMrC41bkbCVF
+                      "${{ secrets.UPDATES_DISCORD_WEBHOOK }}"
