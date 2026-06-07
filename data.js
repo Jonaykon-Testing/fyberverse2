@@ -3,11 +3,12 @@
     -------------------------- */
 
 // Metadata
-const lastUpdated = 'March 2nd, 2026';
-const version = '1.0.7';
+const lastUpdated = 'May 29th, 2026';
+const version = '1.2.1.2';
 
 // menu logo redirection
-menuLogoRedirect = 'info:artifyber';
+menuLogoRedirect = 'info';
+
 
 // orbitData attributes:
 // orbit: int            - which orbit id these attributes apply to
@@ -19,7 +20,10 @@ menuLogoRedirect = 'info:artifyber';
 // offsetY: int          - offsets the Y position of this orbit by pixels
 // scaleX: float         - scale this orbit by the X axis
 // scaleY: float         - scale this orbit by the Y axis
-// center: string        - menuId of a visible orbiting button that can be set as the center of the ring. making it work like sattelites
+// center: string        - menuId of a visible orbiting button that can be set as the center of the ring, making the orbit behave like satellites
+// hideRing: bool        - hides the ring visual if set to true
+// orbitShape: string       - the shape of the orbit, which can be "ellipse", "circle", "square", or a custom shape defined in getOrbitShapeFunction() (defaults to "ellipse")
+// orbitShapeParams: object   - parameters for the shape function, such as rotation for the ellipse shape
 
 // Orbit data
 orbitData = [
@@ -27,6 +31,7 @@ orbitData = [
         orbit: 1,
         title: "Universes",
         desc: "The 6 sections of Fyberverse",
+        direction: 1,
     },
     {
         orbit: 3,
@@ -35,14 +40,15 @@ orbitData = [
     },
     {
         orbit: 4,
-        orbitNum: 4.5,
-        title: "Others",
-        desc: "Miscellanous",
+        orbitNum: 5,
+        direction: -1,
+        title: "Info",
+        desc: "About me and this website",
     },
     {
         orbit: 5,
         orbitNum: 0.375,
-        direction: -0.75,
+        direction: 0.75,
         title: "Links",
         desc: "Connections",
         center: "info",
@@ -57,99 +63,146 @@ orbitData = [
 ];
 
 // menu attributes:
-// menuId: string           - REQUIRED: unique identifier for the menu (alphanumeric, no spaces)
-// title: string            - menu name and title
-// subtitle: string         - short description of menu
-// showTitle: bool          - show name in orbit?
-// orbit: float             - orbit id and default layer placement
-// image: string            - path to the menu thumbnail image. optional
-// color: string            - CSS color of menu. optional
-// scale: float             - if set, modify the menu button scale
-// hidden: bool             - if set, hide menu from orbit (accessible via links only)
-// invisible: bool          - if set, exclude from search
-// labels: array            - cards inside this menu. optional. if a menu has only one card it'll open that automatically
+// menuId: string                      - REQUIRED unique identifier for the menu (alphanumeric, no spaces)
+// title: string                       - menu name and title
+// subtitle: string                    - short menu description
+// showTitle: bool                     - show the menu name in orbit
+// orbit: float                        - orbit id and default layer placement
+// image: string                       - path to the menu thumbnail image (optional)
+// imageScale: float                   - scale for the menu thumbnail (default: 1)
+// color: string                       - menu accent color (optional)
+// gridColor: string                   - card grid background color (optional)
+// gridColor2: string                  - secondary gradient color for the card grid background (optional)
+// gridOpacity: float                  - opacity of the card grid background (optional)
+// scale: float                        - scale the menu button
+// hidden: bool                        - hide menu from orbit (accessible by direct link only)
+// invisible: bool                     - exclude this menu from search
+// noMargin: bool                      - make the card grid span the full window width
+// html: string                        - optional custom HTML shown above the card grid
+// cards: array                        - cards inside this menu; if only one card exists, it opens automatically
 
 // card attributes:
-// cardId: string           - unique identifier for the card (alphanumeric, no spaces). if unset, this becomes a separator
-// title: string            - card title
-// subtitle: string         - short description / excerpt of card
-// detail: string           - the HTML contents of this card
-// image: string            - path to the card thumbnail image. optional
-// url: string              - if set, this card becomes a URL-type card
-// unclickable: bool        - if set, this card becomes unclickable
-// blank: bool              - if set, make this card textless (image-only)
-// banner: bool             - if set, this card becomes a banner-type card
-// linkId: string           - if set as the only attribute, this card links to another menu (menuId)
-// reference: string        - if set as the only attribute, this card copies another card (menuId:cardId)
-// isCharacter: bool        - if set, this is a character card
-// cSpecies: string         - the character species. optional
-// cPronouns: string        - the character pronouns. optional
-// cGender: string          - the character gender. optional
-// cSexuality: string       - the character sexuality. optional
-// cNicknames: string       - the character nicknames. optional
-// cAddOns: string          - extra HTML put above the reference art of the character. optional
-// cReference: string       - path to the character reference art. optional
-// cGallery: array          - array of path to character images. optional
-// cardParentId: string     - DEV ONLY: contains the automatically-assigned menuId of this card
+// cardId: string                      - unique identifier for the card (alphanumeric, no spaces). if unset, this becomes a separator
+// title: string                       - card title
+// subtitle: string                    - short description or excerpt
+// detail: string                      - HTML content for the card
+// image: string                       - path to the card thumbnail image (optional)
+// url: string                         - makes this card open a URL when clicked
+// unclickable: bool                   - makes the card not clickable
+// blank: bool                         - makes the card textless (image-only)
+// banner: bool                        - makes the card a full-width banner
+// semibanner: bool                    - makes the card a half-height banner
+// linkId: string                      - when used alone, links to another menu (menuId)
+// reference: string                   - when used alone, copies another card (menuId:cardId)
+// isCharacter: bool                   - marks this card as a character card
+// species: string                     - character species (optional)
+// pronouns: string                    - character pronouns (optional)
+// gender: string                      - character gender (optional)
+// sexuality: string                   - character sexuality (optional)
+// flags: array                        - array of emoji flag strings (optional)
+// aliases: string                     - alternate character names (optional)
+// characterAttrs: { name: value }     - custom character attribute table (optional)
+// extra: string                       - appended info or HTML after the character table (optional)
+// html: string                        - appended extra HTML at the end of the card (optional)
+// separatorType: string               - if this card is a separator, type of the separator (only "default" or "space" is available for now) (optional)
+// refsheet: string                    - path to character reference art (optional)
+// gallery: array                      - array of image paths for a character gallery (optional)
+// relatives: { cardId, relation }     - internal cards that redirect to another card (menuId:cardId)
+// sections: { title, detail }         - add card sections with their own title and detail
+// cardParentId: string                - DEV ONLY contains the automatically-assigned menuId of this card
 
 // Main menu data array
 let menuItems = [
     /* --------------------------
-    Menu Template
+    Menu Template Example
+    Demonstrates the available menu and card configurations
     -------------------------- */
     {
         menuId: 'menuTemplate',
         title: 'Menu Template Example',
         showTitle: false,
-        subtitle: 'This is a menu example',
+        subtitle: 'A demonstration of available menu and card layouts',
         image: 'images/temp2.png',
+
+        // Visual styling
         color: 'var(--color-15)',
-        orbit: 1.5,
-        scale: 1,
+        gridColor: 'var(--bg)',
+        gridColor2: 'var(--accent3)',
+        gridOpacity: 0.8,
+
+        // Orbit menu behavior
+        orbit: 0,
+        scale: 2,
+
+        // Hidden from normal navigation
         hidden: true,
         invisible: true,
-        labels: [
-            // CARDS WITH THUMBNAILS
+
+        // Custom HTML displayed at the top of the menu
+        html: `
+        <h1>Welcome!</h1>
+        This menu demonstrates the capabilities of the template and also functions as a convenient CSS testing page. 
+        You can freely adjust the styling of your website and instantly preview the results here.<br>
+        <br>
+        This message appears because the menu includes the <code>html</code> property, which allows you to inject 
+        custom HTML directly at the top of a menu. Any elements that normally work inside cards can also be used here. 
+        Feel free to modify it however you like!
+    `,
+
+        cards: [
+
+            /* --------------------------
+            BASIC CARD TYPES
+            -------------------------- */
+
             {
-                // Cards without cardId become separators
-                title: 'Card examples',
-                subtitle: 'Main card types to put your content in',
+                // Cards without cardId act as separators
+                title: 'Card Examples',
+                subtitle: 'Primary card formats used to display content',
             },
+
             {
                 cardId: 'normalCard',
                 title: 'Normal Card',
-                subtitle: 'With thumbnail',
-                detail: 'This is a template for a normal card.<br>You can fill these with whatever you want in raw HTML.',
-                image: 'images/temp.png'        // Thumbnail will be shown in 1:1 aspect ratio
+                subtitle: 'Standard card with thumbnail',
+                detail: 'This is a template for a normal card.<br>You can place any raw HTML content here.',
+                image: 'images/temp.png'   // Displayed in 1:1 aspect ratio
             },
+
             {
                 cardId: 'urlCard',
                 title: 'URL Card',
-                subtitle: 'With thumbnail',
-                url: 'https://x.com/artifyber',  // External URL redirect
-                image: 'images/temp.png'
-            },
-            {
-                cardId: 'unclickableCard',
-                title: 'Unclickable Card',
-                subtitle: 'With thumbnail',
-                unclickable: true,            // Non-clickable info card
+                subtitle: 'Card that redirects to an external link',
+                url: 'https://x.com/artifyber',
                 image: 'images/temp.png'
             },
 
-            // CARDS WITHOUT TEXT
+            {
+                cardId: 'unclickableCard',
+                title: 'Unclickable Card',
+                subtitle: 'Static informational card',
+                unclickable: true,
+                image: 'images/temp.png'
+            },
+
+            /* --------------------------
+            BLANK CARDS (NO TEXT)
+            -------------------------- */
+
             {
                 cardId: 'normalCardBlank',
-                blank: true,    // set the card as blank / have no text
-                detail: 'This is a template for a normal card.<br>You can fill these with whatever you want in raw HTML.',
-                image: 'images/temp.png'        // Thumbnail will be shown in 4:5 aspect ratio
+                blank: true,
+                detail: 'This is a blank card template.<br>You can insert any HTML content you want.',
+                image: 'images/temp.png'   // Displayed in 4:5 aspect ratio
             },
+
             {
                 cardId: 'urlCardBlank',
                 blank: true,
                 url: 'https://x.com/artifyber',
                 image: 'images/temp.png'
             },
+
             {
                 cardId: 'unclickableCardBlank',
                 blank: true,
@@ -157,103 +210,272 @@ let menuItems = [
                 image: 'images/temp.png',
             },
 
-            // CARDS WITHOUT THUMBNAILS
+            /* --------------------------
+            TEXT-ONLY CARDS (NO THUMBNAIL)
+            -------------------------- */
+
             {
                 cardId: 'normalCardPlain',
                 title: 'Normal Card',
-                subtitle: 'Without thumbnail',
-                detail: 'This is a template for a normal card.<br>You can fill these with whatever you want in raw HTML.'
+                subtitle: 'Text-only card',
+                detail: 'A standard card without an image thumbnail.<br>HTML content is supported.'
             },
+
             {
                 cardId: 'urlCardPlain',
                 title: 'URL Card',
-                subtitle: 'Without thumbnail',
+                subtitle: 'Text-only external link',
                 url: 'https://x.com/artifyber'
             },
+
             {
                 cardId: 'unclickableCardPlain',
                 title: 'Unclickable Card',
-                subtitle: 'Without thumbnail',
+                subtitle: 'Text-only informational card',
                 unclickable: true
             },
+
+            /* --------------------------
+            CARD CONTENT DEMOS
+            -------------------------- */
+
             {
-                cardId: 'motherCard',
-                title: 'Mothercard',
-                subtitle: 'This card contains more cards',
+                title: 'Advanced Card Features',
+                subtitle: 'Special functionality and content types',
+            },
+
+            {
+                cardId: 'sectionedCard',
+                title: 'Sectioned/Tabbed Card',
+                subtitle: 'Cards with multiple pages via tabs',
                 detail: `
-                    You can embed cards inside another card by simply using a div element with <code>class="card internal"</code> and set it to reference another card using <code>data-href="menuId:cardId"</code><br>
-                    <br>
-                    To set a caption, use <code>data-caption="caption"</code>
-                    <div class="imgContainer">
-                        <div class="card internal" data-href="menuTemplate:normalCard""></div>
-                        <div class="card internal" data-href="deltadim"></div>
-                        <div class="card internal" data-href="menuTemplate:unclickableCardPlain" data-caption="Optional caption!"></div>
-                        <div class="card internal" data-href="menuTemplate:motherCard" data-caption="Cardception..."></div>
-                    </div>
-                    You can even embed itself if you want!
-                `,
+                <p>Using the <code>sections</code> attribute allows a card to contain <strong>multiple pages</strong> with tabs for navigation!</p>
+                <p>Click the tabs below to view each section:</p>
+                <hr>
+                <p><em>This is perfect for:</em></p>
+                <ul>
+                    <li>Character profiles with multiple categories</li>
+                    <li>FAQ sections</li>
+                    <li>Multi-part articles</li>
+                </ul>
+            `,
+                sections: [
+                    {
+                        title: 'Features',
+                        detail: `
+                        <h3>Features of Sectioned Cards</h3>
+                        <ul>
+                            <li>Each section has its own title</li>
+                            <li>Independent HTML content per section</li>
+                            <li>Tabbed interface for easy navigation</li>
+                            <li>Can include images, embeds, and internal cards</li>
+                        </ul>
+                    `
+                    },
+                    {
+                        title: 'Usage',
+                        detail: `
+                        <h3>When to Use Sections</h3>
+                        <p>Use sections when you have related but distinct content that benefits from organization:</p>
+                        <ul>
+                            <li><strong>Characters:</strong> Bio, Gallery, Relationships</li>
+                            <li><strong>Projects:</strong> Overview, Details, Media</li>
+                            <li><strong>Tutorials:</strong> Step 1, Step 2, Step 3</li>
+                            <li><strong>Music Albums:</strong> Info, Tracklist, Lyrics</li>
+                        </ul>
+                    `
+                    },
+                    {
+                        title: 'Example',
+                        detail: `
+                        <h3>Example Content</h3>
+                        <p>Here's an embedded image in a section:</p>
+                        <img src="images/temp2.png" style="max-width: 100%; border-radius: 10px;">
+                        <p style="margin-top: 10px;">Sections support any HTML content!</p>
+                    `
+                    },
+                ],
                 image: 'images/temp2.png'
             },
 
-            // BANNER CARDS
             {
-                // Cards without cardId become separators
-                title: 'Banner examples',
-                subtitle: 'Useful for describing a section of card grid',
+                cardId: 'internalCardsDemo',
+                title: 'Internal Cards (Embedded)',
+                subtitle: 'Cards that contain other cards',
+                detail: `
+                <h2>Internal Cards Demonstration</h2>
+                <p>Cards can <strong>embed other cards</strong> using the <code>internalCard()</code> helper function!</p>
+                <p>This creates a rich, interconnected content experience.</p>
+                
+                <h3>Embedded Examples:</h3>
+                <div class="container">
+                    ${internalCard({ href: "template:standardCard" })}
+                    ${internalCard({ href: "deltadim" })}
+                    ${internalCard({
+                    href: "template:unclickableCard",
+                    caption: "Custom caption for this card!",
+                    banner: true
+                })}
+                </div>
+                
+                <h3>Customized Internal Cards:</h3>
+                <div class="container">
+                    ${internalCard({
+                    href: "template:urlCard",
+                    title: "Override Title",
+                    subtitle: "This overrides the original card's title/subtitle"
+                })}
+                    ${internalCard({
+                    href: "template:textOnlyCard",
+                    banner: true,
+                    unclickable: true
+                })}
+                </div>
+                
+                <p><strong>Internal cards support:</strong> Custom titles, custom subtitles, banner mode, captions, and unclickable mode!</p>
+            `,
+                image: 'images/temp2.png'
             },
+
+            /* --------------------------
+            BANNER CARDS
+            -------------------------- */
+
+            {
+                title: 'Banner Examples',
+                subtitle: 'Cards that span full width of the container',
+            },
+
             {
                 cardId: 'bannerCard',
                 title: 'Banner Card',
-                subtitle: 'A type of card that spans the entire width of the container',
-                detail: 'This is a template for a normal card.<br>You can fill these with whatever you want in raw HTML.',
+                subtitle: 'Full-width card with image',
+                detail: 'A banner card template. Supports raw HTML content.',
                 banner: true,
                 image: 'images/temp3.png'
             },
+
             {
                 cardId: 'bannerUrlCard',
                 title: 'Banner Card (URL)',
-                subtitle: 'A type of card that spans the entire width of the container',
+                subtitle: 'Full-width card that redirects to a link',
                 banner: true,
                 url: 'https://x.com/artifyber',
                 image: 'images/temp3.png'
             },
+
             {
                 cardId: 'bannerUnclickableCard',
                 title: 'Banner Card (Unclickable)',
-                subtitle: 'A type of card that spans the entire width of the container',
+                subtitle: 'Full-width static informational banner',
                 banner: true,
                 unclickable: true,
                 image: 'images/temp3.png'
             },
+
             {
                 cardId: 'bannerCardBlank',
                 title: 'Banner Card - No Thumbnail',
-                subtitle: 'A type of card that spans the entire width of the container',
-                detail: 'This is a template for a normal card.<br>You can fill these with whatever you want in raw HTML.',
+                subtitle: 'Full-width card without an image',
+                detail: 'A banner card template without a thumbnail.',
                 banner: true,
             },
+
             {
                 cardId: 'bannerUrlCardBlank',
                 title: 'Banner Card - No Thumbnail (URL)',
-                subtitle: 'A type of card that spans the entire width of the container',
+                subtitle: 'Full-width external link banner',
                 banner: true,
                 url: 'https://x.com/artifyber',
             },
+
             {
                 cardId: 'bannerUnclickableCardBlank',
                 title: 'Banner Card - No Thumbnail (Unclickable)',
-                subtitle: 'A type of card that spans the entire width of the container',
+                subtitle: 'Full-width static banner',
                 banner: true,
                 unclickable: true,
             },
 
-            // MENU-LINKED CARDS
+            /* --------------------------
+            SEMIBANNER CARDS
+            -------------------------- */
+
             {
-                title: 'Menu-Link examples',
+                title: 'Semibanner Examples',
+                subtitle: 'Cards that span half width of the container',
+            },
+
+            {
+                cardId: 'semibannerCard',
+                title: 'Semibanner Card',
+                subtitle: 'Half-width card with image',
+                detail: 'A semibanner card template. Supports raw HTML content.',
+                semibanner: true,
+                image: 'images/temp3.png'
+            },
+
+            {
+                cardId: 'semibannerUrlCard',
+                title: 'Semibanner Card (URL)',
+                subtitle: 'Half-width card that redirects to a link',
+                semibanner: true,
+                url: 'https://x.com/artifyber',
+                image: 'images/temp3.png'
+            },
+
+            {
+                cardId: 'semibannerUnclickableCard',
+                title: 'Semibanner Card (Unclickable)',
+                subtitle: `
+                    Half-width static informational banner<br>
+                    <br>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    `,
+                semibanner: true,
+                unclickable: true,
+                image: 'images/temp3.png'
+            },
+
+            {
+                cardId: 'semibannerCardBlank',
+                title: 'Semibanner Card - No Thumbnail',
+                subtitle: 'Half-width card without an image',
+                detail: 'A semi-banner card template without a thumbnail.',
+                semibanner: true,
+            },
+
+            {
+                cardId: 'semibannerUrlCardBlank',
+                title: 'Semibanner Card - No Thumbnail (URL)',
+                subtitle: 'Half-width external link banner',
+                semibanner: true,
+                url: 'https://x.com/artifyber',
+            },
+
+            {
+                cardId: 'semibannerUnclickableCardBlank',
+                title: 'Semibanner Card - No Thumbnail (Unclickable)',
+                subtitle: `
+                    Half-width static informational banner<br>
+                    <br>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    `,
+                semibanner: true,
+                unclickable: true,
+            },
+
+            /* --------------------------
+            MENU LINKS
+            -------------------------- */
+
+            {
+                title: 'Menu Link Examples',
                 subtitle: 'Cards that open another menu',
             },
+
             {
-                linkId: 'deltadim'  // Links to menu with matching 'menuId' property
+                linkId: 'deltadim'
             },
             {
                 linkId: 'floriverse'
@@ -261,17 +483,265 @@ let menuItems = [
             {
                 linkId: 'info'
             },
+
             {
                 linkId: 'deltadim',
                 banner: true
             },
             {
                 linkId: 'floriverse',
-                banner: true
+                semibanner: true
             },
             {
                 linkId: 'info',
-                banner: true
+                semibanner: true
+            },
+
+            /* --------------------------
+            CHARACTER CARDS
+            -------------------------- */
+            
+            {
+                title: 'Character Cards',
+                subtitle: 'Specialized cards with character attributes',
+            },
+
+            {
+                cardId: 'demoCharacter',
+                title: 'Sample Character',
+                subtitle: 'A demonstration character card',
+                detail: `
+                <p>This character card demonstrates all the <strong>character-specific features</strong> available!</p>
+                <p>Character cards automatically generate information tables, gallery sections, and relationship links.</p>
+            `,
+
+                isCharacter: true,
+                species: 'Digitalia',
+                pronouns: 'It/They/He',
+                gender: 'Non-binary',
+                sexuality: 'Pansexual',
+                flags: ['rainbow'],
+                aliases: 'Demo, Example, Test Subject',
+
+                characterAttrs: {
+                    'Age': '???',
+                    'Height': '4\'7" (140cm)',
+                    'Occupation': 'Template Character',
+                    'Residence': 'The Fyberverse',
+                    'Design Origin': 'Built-in Template',
+                    'Favorite Color': 'Gray',
+                    'Artist Notes': 'This is a demo character - replace with your own!'
+                },
+
+                extra: `
+                <p><strong>Special Notes:</strong> This character is purely for demonstration purposes. Feel free to use this structure for your own characters!</p>
+                <p><em>Extra HTML can be added after the character table using the <code>extra</code> field.</em></p>
+            `,
+
+                refsheet: 'images/tempoc-r.png',
+
+                gallery: [
+                    'images/tempoc.png',
+                ],
+
+                relatives: [
+                    {
+                        cardId: 'template:demoCharacter',
+                        relation: 'Itself'
+                    },
+                ],
+
+                sections: [
+                    {
+                        title: 'Backstory',
+                        detail: `
+                        <h3>Character Backstory</h3>
+                        <p>This is where you'd put a character's backstory, personality traits, and other narrative details.</p>
+                        <p>The <code>sections</code> array lets you add unlimited custom tabs to character cards!</p>
+                    `
+                    }
+                ],
+
+                html: `
+                <div style="background: var(--accent2); padding: 15px; border-radius: 10px; margin-top: 10px;">
+                    <strong>Pro Tip:</strong> The <code>html</code> field appends content at the very end of the card, after all auto-generated sections!
+                </div>
+            `,
+
+                image: 'images/tempoc.png',
+            },
+
+            /* --------------------------
+            SEPARATOR TYPES
+            -------------------------- */
+            {
+                separatorType: 'default',
+                title: 'Default Separator',
+                subtitle: 'Standard section divider'
+            },
+
+            {
+                separatorType: 'space',
+                title: 'Space Separator',
+                subtitle: 'Adds vertical spacing without a visible divider'
+            },
+
+            /* --------------------------
+            RICH CONTENT
+            -------------------------- */
+            {
+                title: 'Rich Content Examples',
+                subtitle: 'Demonstrating various HTML capabilities',
+            },
+
+            {
+                cardId: 'embedDemo',
+                title: 'Embedded Content',
+                subtitle: 'Spotify, YouTube, and more',
+                detail: `
+                <h2>Embedded Media Examples</h2>
+                <p>Cards support all kinds of embedded content!</p>
+                
+                <h3>Spotify Embed:</h3>
+                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/4gdYjAljNAoRtL5TM7lZ13?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                
+                <p>Any iframe or embed code works!</p>
+            `,
+                image: 'images/temp.png'
+            },
+
+            {
+                cardId: 'galleryDemo',
+                title: 'Image Gallery',
+                subtitle: 'Grid layout image demonstration',
+                detail: `
+                <h2>Image Gallery Layout</h2>
+                <p>Use the <code>container</code> class for horizontal galleries:</p>
+                <div class="container">
+                    <img src="images/temp.png">
+                    <img src="images/temp2.png">
+                    <img src="images/temp3.png">
+                    <img src="images/temp.png">
+                    <img src="images/temp2.png">
+                    <img src="images/temp3.png">
+                </div>
+                <p>Or <code>container grid</code> to turn it into a grid:</p>
+                <div class="container grid">
+                    <img src="images/temp.png">
+                    <img src="images/temp2.png">
+                    <img src="images/temp3.png">
+                    <img src="images/temp.png">
+                    <img src="images/temp2.png">
+                    <img src="images/temp3.png">
+                </div>
+                <p>Images with captions:</p>
+                <div class="container grid">
+                    <img src="images/temp.png" data-caption="Image 1" data-subcaption="First example image">
+                    <img src="images/temp2.png" data-caption="Image 2" data-subcaption="Second example image">
+                    <img src="images/temp3.png" data-caption="Image 3" data-subcaption="Third example image">
+                </div>
+                <hr>
+                <div style="background: var(--accent2); padding: 15px; border-radius: 10px; margin-top: 10px;">
+                    <strong>Pro Tip:</strong> The <code>gallery</code> tab is automatically created for each image in the card!
+                </div>
+            `,
+                image: 'images/temp2.png'
+            },
+
+            // ============================================================
+            // SECTION: TIPS & DOCUMENTATION
+            // ============================================================
+            {
+                cardId: 'tipsAndTricks',
+                title: 'Tips & Tricks',
+                subtitle: 'Best practices for using this template',
+                detail: `
+                <h2>Template Usage Guide</h2>
+                
+                <h3>Card Structure</h3>
+                <ul>
+                    <li><strong>cardId:</strong> Unique identifier (required for linkable cards)</li>
+                    <li><strong>title:</strong> Card heading</li>
+                    <li><strong>subtitle:</strong> Secondary text (shorter is better)</li>
+                    <li><strong>detail:</strong> Main HTML content (can be very long!)</li>
+                    <li><strong>image:</strong> Path to thumbnail (optional but recommended)</li>
+                </ul>
+                
+                <h3>Visual Options</h3>
+                <ul>
+                    <li><strong>banner: true</strong> - Full width card</li>
+                    <li><strong>semibanner: true</strong> - Half width card</li>
+                    <li><strong>blank: true</strong> - Image-only card (no text overlay)</li>
+                    <li><strong>unclickable: true</strong> - Card doesn't open when clicked</li>
+                </ul>
+                
+                <h3>Navigation</h3>
+                <ul>
+                    <li><strong>url: "https://..."</strong> - Opens external link</li>
+                    <li><strong>linkId: "menuId"</strong> - Navigates to another menu</li>
+                    <li><strong>reference: "menuId:cardId"</strong> - Copies content from another card</li>
+                </ul>
+                
+                <h3>Character Cards</h3>
+                <ul>
+                    <li><strong>isCharacter: true</strong> - Enables character features</li>
+                    <li><strong>species, pronouns, gender, sexuality</strong> - Basic info</li>
+                    <li><strong>flags</strong> - Array of emoji strings</li>
+                    <li><strong>characterAttrs</strong> - Custom key-value pairs</li>
+                    <li><strong>relatives</strong> - Relationship links to other cards</li>
+                    <li><strong>gallery</strong> - Array of image paths</li>
+                    <li><strong>refsheet</strong> - Character reference sheet image</li>
+                </ul>
+                
+                <h3>Sections/Tabs</h3>
+                <ul>
+                    <li><strong>sections</strong> - Array of {title, detail} objects for tabbed content</li>
+                    <li>Auto-generates with gallery, relatives, and refsheet</li>
+                </ul>
+                
+                <h3>Internal Cards</h3>
+                <ul>
+                    <li>Use <code>internalCard({ href: "menuId:cardId" })</code> function</li>
+                    <li>Options: banner, caption, title, subtitle, unclickable</li>
+                    <li>Good for linking related content</li>
+                </ul>
+                
+                <hr>
+                
+                <h3>Quick Copy Template:</h3>
+                <pre style="background: var(--bg); padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 1rem;">
+{
+    cardId: 'yourCardId',
+    title: 'Your Title',
+    subtitle: 'Your Subtitle',
+    detail: '&lt;p&gt;Your HTML content here&lt;/p&gt;',
+    image: 'path/to/image.png',
+    // Optional:
+    banner: true,
+    // or semibanner: true
+    // or blank: true
+    // or unclickable: true
+    // or url: 'https://...'
+    // or linkId: 'menuId'
+    // or reference: 'menuId:cardId'
+    // For characters:
+    isCharacter: true,
+    species: 'Species',
+    pronouns: 'Pronouns',
+    gender: 'Gender',
+    sexuality: 'Sexuality',
+    flags: ['rainbow'],
+    aliases: 'Alias names',
+    characterAttrs: { 'Key': 'Value' },
+    relatives: [{ cardId: 'menuId:cardId', relation: 'Relation' }],
+    gallery: ['image1.png', 'image2.png'],
+    refsheet: 'refsheet.png',
+    sections: [{ title: 'Section', detail: 'Content' }]
+}
+                </pre>
+            `,
+                banner: true,
+                image: 'images/temp.png'
             },
         ]
     },
@@ -281,37 +751,6 @@ let menuItems = [
     -------------------------- */
 
     {
-        title: 'Artineko',
-        menuId: 'artineko',
-        hidden: true,
-        labels: [
-            {
-                cardId: 'sprinkles',
-                title: 'Sprinkles',
-                subtitle: '',
-                detail: '',
-                hidden: "true",
-
-                isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Aroace',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/sprinkles-c.png',
-                    'images/c/sprinkles-c2.png',
-                ],
-                cRelations: [],
-            },
-        ]
-    },
-
-
-
-    {
         // Deltadim
         title: 'Deltadim',
         menuId: 'deltadim',
@@ -319,8 +758,11 @@ let menuItems = [
         image: 'icons/deltadim.png',
         scale: 1,
         color: 'var(--color-1)',
+        gridColor: 'var(--color-1)',
+        gridColor2: 'var(--accent2)',
+        gridOpacity: 0.1,
         orbit: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'info',
                 title: 'Info',
@@ -347,9 +789,6 @@ let menuItems = [
                 linkId: 'deltadim-deltaspace',
             },
             {
-                linkId: 'deltadim-missing',
-            },
-            {
                 title: 'Pinned',
                 subtitle: 'You might be looking for these'
             },
@@ -369,7 +808,7 @@ let menuItems = [
                 reference: 'deltadim-teksui:artilope',
             },
             {
-                reference: 'deltadim-missing:shirley',
+                reference: 'deltadim-teksui:card',
             },
         ]
     },
@@ -381,7 +820,7 @@ let menuItems = [
         color: 'var(--color-9)',
         parent: 'deltadim',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'artibun',
                 title: 'Artibun',
@@ -395,22 +834,38 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'She/Any',
-                cGender: 'Bigender',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Bunbun',
-                cAddOns: '',
-                cReference: 'images/r/artibun-r.png',
-                cGallery: [
+                species: 'Rabbit',
+                pronouns: 'She/Any',
+                gender: 'Bigender',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Bunbun',
+                extra: ``,
+                refsheet: 'images/r/artibun-r.png',
+                gallery: [
                     'images/c/artibun-c.png',
                     'images/c/artibun-c2.png',
                     'images/c/artibun-c3.png',
                     'images/c/artibun-c4.png',
                     'images/c/artibun-c5.png',
                     'images/c/artibun-c6.png',
+                    'images/c/artibun-c7.png',
+                    'images/c/artibun-c8.png',
+                    'images/c/artibun-c9.png',
+                    'images/c/artibun-c10.png',
+                    'images/c/artibun-c11.png',
+                    'images/c/artibun-c12.png',
+                    'images/c/artibun-c13.png',
+                    'images/c/artibun-c14.png',
+                    'images/c/artibun-c15.png',
+                    'images/c/artibun-c16.png',
+                    'images/c/artibun-c17.png',
+                    'images/c/artibun-c18.png',
+                    'images/c/artibun-c19.png',
+                    'images/c/artibun-c20.png',
+                    'images/c/artibun-c21.png',
+                    'images/c/artibun-c22.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:articat',
                         relation: 'Significant Other'
@@ -430,22 +885,27 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'He/Any',
-                cGender: 'Male',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Kiki',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'He/Any',
+                gender: 'Male',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Kiki',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/articat-c.png',
                     'images/c/articat-c2.png',
                     'images/c/articat-c3.png',
                     'images/c/articat-c4.png',
                     'images/c/articat-c5.png',
                     'images/c/articat-c6.png',
+                    'images/c/articat-c7.png',
+                    'images/c/articat-c8.png',
+                    'images/c/articat-c9.png',
+                    'images/c/articat-c10.png',
+                    'images/c/articat-c11.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artibun',
                         relation: 'Significant Other'
@@ -465,20 +925,25 @@ let menuItems = [
                 Arti was born in Chromasia and moved to Teksui after his gender-affirming surgery. He's currently living in an apartment and work part-time as a fast food employee.`,
 
                 isCharacter: true,
-                cSpecies: 'Fox',
-                cPronouns: 'He/They',
-                cGender: 'Trans-male',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Fofo, Foxxo',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Fox',
+                pronouns: 'He/They',
+                gender: 'Trans-male',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Fofo, Foxxo',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artifox-c.png',
                     'images/c/artifox-c2.png',
                     'images/c/artifox-c3.png',
                     'images/c/artifox-c4.png',
                     'images/c/artifox-c5.png',
                     'images/c/artifox-c6.png',
+                    'images/c/artifox-c7.png',
+                    'images/c/artifox-c8.png',
+                    'images/c/artifox-c9.png',
+                    'images/c/artifox-c10.png',
+                    'images/c/artifox-c11.png',
                 ],
 
                 image: 'images/i/artifox-i.png',
@@ -495,22 +960,30 @@ let menuItems = [
                 While being an aquatic creature who needs water to survive, they can also breathe in air as long as their organs stay wet, which they do by sleeping in an aquarium or soaking themselves in nearby pond every couple hours.`,
 
                 isCharacter: true,
-                cSpecies: 'Cat + Shark',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cSexuality: 'Demisexual',
-                cNicknames: 'Arti, Fifi',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat + Shark',
+                pronouns: 'They/Fish',
+                gender: 'Non-binary',
+                sexuality: 'Demisexual',
+                flags: ['fishgender'],
+                aliases: 'Arti, Fifi',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artifish-c.png',
                     'images/c/artifish-c2.png',
                     'images/c/artifish-c3.png',
                     'images/c/artifish-c4.png',
                     'images/c/artifish-c5.png',
                     'images/c/artifish-c6.png',
+                    'images/c/artifish-c7.png',
+                    'images/c/artifish-c8.png',
+                    'images/c/artifish-c9.png',
+                    'images/c/artifish-c10.png',
+                    'images/c/artifish-c11.png',
+                    'images/c/artifish-c12.png',
+                    'images/c/artifish-c13.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artilope',
                         relation: 'Significant Other'
@@ -529,26 +1002,33 @@ let menuItems = [
                 Arti has a hobby of reading books, writing stories, and play saxophone. He lives in an apartment with his partner Artipup and works as a cashier at a local supermarket in Teksui.`,
 
                 isCharacter: true,
-                cSpecies: 'Goat',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cSexuality: 'Gay',
-                cNicknames: 'Arti, Baba, Goat',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Goat',
+                pronouns: 'He',
+                gender: 'Male',
+                sexuality: 'Gay',
+                aliases: 'Arti, Baba, Goat',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artigoat-c.png',
                     'images/c/artigoat-c2.png',
                     'images/c/artigoat-c3.png',
                     'images/c/artigoat-c4.png',
                     'images/c/artigoat-c5.png',
                     'images/c/artigoat-c6.png',
+                    'images/c/artigoat-c7.png',
+                    'images/c/artigoat-c8.png',
+                    'images/c/artigoat-c9.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artipup',
                         relation: 'Significant Other'
                     },
+                    {
+                        cardId: 'hizen:amari',
+                        relation: 'Sister'
+                    }
                 ],
 
                 image: 'images/i/artigoat-i.png',
@@ -563,22 +1043,30 @@ let menuItems = [
                 Living at the outskirts of Teksui with her partner Artifish, she is a lumberjack and carpenter. She likes to make wood sculptures and furnitures.`,
 
                 isCharacter: true,
-                cSpecies: 'Jackalope',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Demisexual',
-                cNicknames: 'Arti, Lolo, Jacquie, Jacqueline',
-                cAddOns: '',
-                cReference: 'images/r/artilope-r.png',
-                cGallery: [
+                species: 'Jackalope',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Demisexual',
+                aliases: 'Arti, Lolo, Jacquie, Jacqueline',
+                extra: '',
+                refsheet: 'images/r/artilope-r.png',
+                gallery: [
+                    'images/c/artilope-c3.png',
                     'images/c/artilope-c.png',
                     'images/c/artilope-c2.png',
-                    'images/c/artilope-c3.png',
                     'images/c/artilope-c4.png',
                     'images/c/artilope-c5.png',
                     'images/c/artilope-c6.png',
+                    'images/c/artilope-c7.png',
+                    'images/c/artilope-c8.png',
+                    'images/c/artilope-c9.png',
+                    'images/c/artilope-c10.png',
+                    'images/c/artilope-c11.png',
+                    'images/c/artilope-c12.png',
+                    'images/c/artilope-c13.png',
+                    'images/c/artilope-c14.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artifish',
                         relation: 'Significant Other'
@@ -601,22 +1089,24 @@ let menuItems = [
                 Living in an apartment with his partner Artigoat, this puppy occasionally makes music with his minimal setup, being a laptop, MIDI keytar and an amplifier.`,
 
                 isCharacter: true,
-                cSpecies: 'Dog',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Gay',
-                cNicknames: 'Arti, Arfy, Puppy',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Dog',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Gay',
+                aliases: 'Arti, Arfy, Puppy',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artipup-c.png',
                     'images/c/artipup-c2.png',
                     'images/c/artipup-c3.png',
                     'images/c/artipup-c4.png',
                     'images/c/artipup-c5.png',
                     'images/c/artipup-c6.png',
+                    'images/c/artipup-c7.png',
+                    'images/c/artipup-c8.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artigoat',
                         relation: 'Significant Other'
@@ -634,32 +1124,54 @@ let menuItems = [
                 <br>
                 She is an influencer and streamer who makes content on social medias. She has a younger sibling with the name Artimouse, who lives in Chromasia.<br>
                 <br>
-                Neko pretty much never be seen taking off her accessories. She claims that she feels more comfortable that way.`,
+                Neko is rarely seen without her accessories, as she feels more comfortable keeping them on.`,
 
                 isCharacter: true,
-                cSpecies: 'Human (cat cosplay)',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Aroace',
-                cNicknames: 'Arti, Nay, Neko',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Human (cat cosplay)',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Aroace',
+                aliases: 'Arti, Nay, Neko',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artineko-c.png',
                     'images/c/artineko-c2.png',
                     'images/c/artineko-c3.png',
                     'images/c/artineko-c4.png',
                     'images/c/artineko-c5.png',
                     'images/c/artineko-c6.png',
+                    'images/c/artineko-c7.png',
+                    'images/c/artineko-c8.png',
+                    'images/c/artineko-c9.png',
+                    'images/c/artineko-c10.png',
+                    'images/c/artineko-c11.png',
                 ],
-                cRelations: [
+                sections: [
+                    {
+                        title: 'Fursona',
+                        detail: `
+                            <h1>Sprinkles</h1>
+                            <hr>
+                            Species: Cat<br>
+                            Pronouns: She<br>
+                            Gender: Female<br>
+                            Sexuality: Aroace<br>
+                            <br>
+                            <br>
+                            <div class="container grid">
+                                <img src="images/c/sprinkles-c.png">
+                                <img src="images/c/sprinkles-c2.png">
+                                <img src="images/c/sprinkles-c3.png">
+                                <img src="images/c/sprinkles-c4.png">
+                            </div>
+                    `
+                    },
+                ],
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:artimouse',
                         relation: 'Younger Sister'
-                    },
-                    {
-                        cardId: 'artineko:sprinkles',
-                        relation: 'Fursona'
                     },
                 ],
 
@@ -676,22 +1188,23 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She/They',
-                cGender: 'Trans-female',
-                cSexuality: 'Demisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'She/They',
+                gender: 'Trans-female',
+                sexuality: 'Demisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/eros-c.png',
                     'images/c/eros-c2.png',
                     'images/c/eros-c3.png',
                     'images/c/eros-c4.png',
                     'images/c/eros-c5.png',
+                    'images/c/eros-c7.png',
                     'images/c/eros-c6.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:sora',
                         relation: 'Significant Other'
@@ -711,18 +1224,19 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She/They',
-                cGender: 'Trans-female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/sora-r.png',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'She/They',
+                gender: 'Trans-female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/sora-c.png',
                     'images/c/sora-c2.png',
+                    'images/c/sora-c3.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:eros',
                         relation: 'Significant Other'
@@ -743,22 +1257,22 @@ let menuItems = [
                 ,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/furfy-c3.png',
                     'images/c/furfy-c6.png',
                     'images/c/furfy-c.png',
                     'images/c/furfy-c2.png',
-                    'images/c/furfy-c3.png',
                     'images/c/furfy-c4.png',
                     'images/c/furfy-c5.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:mist',
                         relation: 'Significant Other'
@@ -778,18 +1292,19 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/mist-c3.png',
                     'images/c/mist-c.png',
                     'images/c/mist-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:furfy',
                         relation: 'Significant Other'
@@ -803,20 +1318,20 @@ let menuItems = [
                 title: 'Card',
                 subtitle: '',
                 detail: `
-                Card is an orange female cat with an open cardboard box as her head. It consists of drawn-on cat features such as triangular ears, as well as some informational texts on the sides of her head like a typical packaging box. Her eyes and mouth are also seemingly drawn-on. However it can dynamically change expressions like a real face.<br>
+                Card is an orange female cat with an open cardboard box as her head. It consists of drawn-on cat features such as triangular ears, as well as some informational text on the sides of her head like a typical packaging box. Her eyes and mouth are also seemingly drawn-on. However it can dynamically change expression like a real face.<br>
                 <br>
                 Card has a part-time job as a delivery courier. She lives with her partner Gift at their own home in Teksui. She likes to make crafts and origamis out of paper. She also has an obsession of collecting anything and sort them into cardboard boxes.
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Cardboard Cat',
-                cPronouns: 'She/Any',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/card-r.png',
-                cGallery: [
+                species: 'Cardboard Cat',
+                pronouns: 'She/Any',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/card-r.png',
+                gallery: [
                     'images/c/card-c.png',
                     'images/c/card-c2.png',
                     'images/c/card-c3.png',
@@ -824,7 +1339,7 @@ let menuItems = [
                     'images/c/card-c5.png',
                     'images/c/card-c6.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:gift',
                         relation: 'Significant Other'
@@ -844,17 +1359,17 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Giftbox Rabbit',
-                cPronouns: 'She/Any',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/gift-r.png',
-                cGallery: [
+                species: 'Giftbox Rabbit',
+                pronouns: 'She/Any',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/gift-r.png',
+                gallery: [
                     'images/c/gift-c.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:card',
                         relation: 'Significant Other'
@@ -870,14 +1385,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Sea Bunny',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Sea Bunny',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/elise-c.png',
                 ],
 
@@ -896,18 +1411,18 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Fox',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Fox',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Heterosexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/fika-c.png',
                     'images/c/fika-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:rai',
                         relation: 'Significant Other'
@@ -929,18 +1444,19 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Fox',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cSexuality: 'Heterosexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/rai-r.png',
-                cGallery: [
+                species: 'Fox',
+                pronouns: 'He',
+                gender: 'Male',
+                sexuality: 'Heterosexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/rai-r.png',
+                gallery: [
                     'images/c/rai-c.png',
+                    'images/c/rai-c3.png',
                     'images/c/rai-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:fika',
                         relation: 'Significant Other'
@@ -959,20 +1475,21 @@ let menuItems = [
                 Xanthe lives at the central part of Teksui. She loves photography and traveling. She occasionally visits her sister at the outskirts of Teksui to hang out, or just to annoy her.`,
 
                 isCharacter: true,
-                cSpecies: 'Jackalope',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Xanthelope',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Jackalope',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Heterosexual',
+                aliases: 'Xanthelope',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/xanthe-c5.png',
                     'images/c/xanthe-c.png',
                     'images/c/xanthe-c2.png',
                     'images/c/xanthe-c3.png',
                     'images/c/xanthe-c4.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artilope',
                         relation: 'Older Sister'
@@ -988,14 +1505,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Robunny',
-                cPronouns: 'She/They/It',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/remy-r.png',
-                cGallery: [],
+                species: 'Robunny',
+                pronouns: 'She/They/It',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/remy-r.png',
+                gallery: [],
 
                 image: 'images/i/remy-i.png',
             },
@@ -1006,14 +1523,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Robocat',
-                cPronouns: 'He/They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/unnamed155-r.png',
-                cGallery: [],
+                species: 'Robocat',
+                pronouns: 'He/They',
+                gender: 'Non-Binary',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/unnamed155-r.png',
+                gallery: [],
 
                 image: 'images/i/unnamed155-i.png',
             },
@@ -1027,7 +1544,7 @@ let menuItems = [
         color: 'var(--color-14)',
         parent: 'deltadim',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'artibon',
                 title: 'Artibon',
@@ -1035,22 +1552,23 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: 'Arti, Ribbon, Bonbon, Sylvy',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/artibon-c.png',
+                species: 'Rabbit',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: 'Arti, Ribbon, Bonbon, Sylvy',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artibon-c2.png',
+                    'images/c/artibon-c7.png',
                     'images/c/artibon-c3.png',
                     'images/c/artibon-c4.png',
                     'images/c/artibon-c5.png',
                     'images/c/artibon-c6.png',
+                    'images/c/artibon-c.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:artishade',
                         relation: 'Significant Other'
@@ -1066,20 +1584,21 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Mousegirl',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Mimi',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Mousegirl',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Mimi',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artimouse-c2.png',
                     'images/c/artimouse-c.png',
                     'images/c/artimouse-c1.png',
-                    'images/c/artimouse-c2.png',
                     'images/c/artimouse-c3.png',
+                    'images/c/artimouse-c5.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-teksui:artineko',
                         relation: 'Older Sister'
@@ -1095,20 +1614,20 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Ferret',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Fer',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Ferret',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Fer',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artiferret-c4.png',
                     'images/c/artiferret-c.png',
                     'images/c/artiferret-c2.png',
                     'images/c/artiferret-c3.png',
-                    'images/c/artiferret-c4.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-aakik:ellie',
                         relation: 'Married'
@@ -1124,18 +1643,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Sign',
-                cPronouns: 'She/Them',
-                cGender: 'None',
-                cSexuality: '',
-                cNicknames: 'Arti, 3',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Sign',
+                pronouns: 'She/Them',
+                gender: 'None',
+                sexuality: '',
+                aliases: 'Arti, 3',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artitri-c.png',
                     'images/c/artitri-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:artibot',
                         relation: 'Machinemate'
@@ -1151,19 +1670,19 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Robocat',
-                cPronouns: 'He/It',
-                cGender: 'None',
-                cSexuality: '',
-                cNicknames: 'Arti, B.B',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Robocat',
+                pronouns: 'He/It',
+                gender: 'None',
+                sexuality: '',
+                aliases: 'Arti, B.B',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artibot-c3.png',
                     'images/c/artibot-c.png',
                     'images/c/artibot-c2.png',
-                    'images/c/artibot-c3.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:artitri',
                         relation: 'Machinemate'
@@ -1179,21 +1698,22 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Fennec',
-                cPronouns: 'She/He/They',
-                cGender: 'Intersex Bigender',
-                cSexuality: 'Lesbian',
-                cNicknames: 'Arti, Sasha',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Fennec',
+                pronouns: 'She/He/They',
+                gender: 'Intersex Bigender',
+                sexuality: 'Lesbian',
+                flags: ['Intersex', 'bigender'],
+                aliases: 'Arti, Sasha',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artishade-c3.png',
                     'images/c/artishade-c.png',
                     'images/c/artishade-c2.png',
-                    'images/c/artishade-c3.png',
                     'images/c/artishade-c4.png',
                     'images/c/artishade-c5.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:artibon',
                         relation: 'Significant Other'
@@ -1209,22 +1729,25 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Dragon',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Rara',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Dragon',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Rara',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artidragon-c5.png',
                     'images/c/artidragon-c.png',
                     'images/c/artidragon-c2.png',
                     'images/c/artidragon-c3.png',
                     'images/c/artidragon-c4.png',
+                    'images/c/artidragon-c6.png',
                 ],
 
                 image: 'images/i/artidragon-i.png',
             },
+            // ------------------------------
             {
                 cardId: 'willow',
                 title: 'Willow',
@@ -1232,14 +1755,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Lamp Cat',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Lamp Cat',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/willow-c.png',
                 ],
 
@@ -1252,22 +1775,24 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Bee',
-                cPronouns: 'She/They',
-                cGender: 'Demigirl',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Bee',
+                pronouns: 'She/They',
+                gender: 'Demigirl',
+                sexuality: 'Lesbian',
+                flags: ['floriesexual'],
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/hana-c.png',
                     'images/c/hana-c2.png',
                     'images/c/hana-c3.png',
                     'images/c/hana-c4.png',
                     'images/c/hana-c5.png',
                     'images/c/hana-c6.png',
+                    'images/c/hana-c7.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'floriverse-epsilon:fveAurelia',
                         relation: 'Significant Other'
@@ -1283,22 +1808,27 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat + Shrimp',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Mella',
-                cAddOns: `Design made by <a href="https://x.com/M3ko_Ne" target="_blank">M3ko_Ne</a>`,
-                cReference: 'images/r/caramella-r.png',
-                cGallery: [
+                species: 'Cat + Shrimp',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: 'Mella',
+                characterAttrs: {
+                    'Design Origin': '<a href="https://x.com/M3ko_Ne" target="_blank">M3ko_Ne</a>',
+                },
+                extra: ``,
+                refsheet: 'images/r/caramella-r.png',
+                gallery: [
                     'images/c/caramella-c.png',
                     'images/c/caramella-c2.png',
                     'images/c/caramella-c3.png',
                     'images/c/caramella-c4.png',
                     'images/c/caramella-c5.png',
                     'images/c/caramella-c6.png',
+                    'images/c/caramella-c7.png',
+                    'images/c/caramella-c8.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:azurey',
                         relation: 'Significant Other'
@@ -1314,20 +1844,21 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat + Shark',
-                cPronouns: 'He/They',
-                cGender: 'Demiboy',
-                cSexuality: 'Pansexual',
-                cNicknames: 'Azu',
-                cAddOns: '',
-                cReference: 'images/r/azurey-r.png',
-                cGallery: [
+                species: 'Cat + Shark',
+                pronouns: 'He/They',
+                gender: 'Demiboy',
+                sexuality: 'Pansexual',
+                flags: ['fishgender'],
+                aliases: 'Azu',
+                extra: '',
+                refsheet: 'images/r/azurey-r.png',
+                gallery: [
                     'images/c/azurey-c.png',
                     'images/c/azurey-c2.png',
                     'images/c/azurey-c3.png',
                     'images/c/azurey-c4.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:caramella',
                         relation: 'Significant Other'
@@ -1343,14 +1874,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Medusa + Cat',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Pansexual',
-                cNicknames: 'Meowdusa',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Medusa + Cat',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Pansexual',
+                aliases: 'Meowdusa',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/mida-c.png',
                     'images/c/mida-c2.png',
                     'images/c/mida-c3.png',
@@ -1365,14 +1896,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Angel-Demon Cat',
-                cPronouns: 'She/Any',
-                cGender: 'Female',
-                cSexuality: 'Pansexual',
-                cNicknames: '',
-                cAddOns: 'Adopted from <a href="https://x.com/naycookye" target="_blank">naycookye</a>',
-                cReference: 'images/r/lilac-r.png',
-                cGallery: [],
+                species: 'Angel-Demon Cat',
+                pronouns: 'She/Any',
+                gender: 'Female',
+                sexuality: 'Pansexual',
+                aliases: '',
+                characterAttrs: {
+                    'Design Origin': '<a href="https://x.com/naycookye" target="_blank">naycookye</a>',
+                },
+                extra: '',
+                refsheet: 'images/r/lilac-r.png',
+                gallery: [],
 
                 image: 'images/i/lilac-i.png',
             },
@@ -1383,14 +1917,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Dog',
-                cPronouns: 'He/They',
-                cGender: 'Trans-male',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/moka-r.png',
-                cGallery: [],
+                species: 'Dog',
+                pronouns: 'He/They',
+                gender: 'Trans-male',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/moka-r.png',
+                gallery: [],
 
                 image: 'images/i/moka-i.png',
             },
@@ -1401,14 +1935,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Fennec + Cat',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Gay',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/nameless-r.png',
-                cGallery: [
+                species: 'Fennec + Cat',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Gay',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/nameless-r.png',
+                gallery: [
                     'images/c/nameless-c.png',
                 ],
 
@@ -1421,14 +1955,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Tanuki',
-                cPronouns: 'She/Any',
-                cGender: 'Female',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/nuki-r.png',
-                cGallery: [
+                species: 'Tanuki',
+                pronouns: 'She/Any',
+                gender: 'Female',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/nuki-r.png',
+                gallery: [
                     'images/c/nuki-c.png',
                     'images/c/nuki-c2.png',
                 ],
@@ -1442,14 +1976,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cSexuality: 'Heterosexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/ara-r.png',
-                cGallery: [],
+                species: 'Cat',
+                pronouns: 'He',
+                gender: 'Male',
+                sexuality: 'Heterosexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/ara-r.png',
+                gallery: [],
 
                 image: 'images/i/ara-i.png',
             },
@@ -1460,14 +1994,15 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Probably Gay',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/sawo-r.png',
-                cGallery: [],
+                species: 'Rabbit',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Probably Gay',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/sawo-r.png',
+                flags: ['gay'],
+                gallery: [],
 
                 image: 'images/i/sawo-i.png',
             },
@@ -1478,14 +2013,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Mouse',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Aromantic',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Mouse',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Aromantic',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/nytro-c.png',
                     'images/c/nytro-c2.png',
                 ],
@@ -1502,7 +2037,7 @@ let menuItems = [
         color: 'var(--color-3)',
         parent: 'deltadim',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'artiusagi',
                 title: 'Sukie',
@@ -1510,14 +2045,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Human (Bunny cosplay)',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Usagi, Sukie',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Human (Bunny cosplay)',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: 'Usagi, Sukie',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artiusagi-c.png',
                 ],
 
@@ -1530,14 +2065,15 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Protogen',
-                cPronouns: 'He/They/It',
-                cGender: 'Male',
-                cSexuality: 'Asexual',
-                cNicknames: 'Proto',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Protogen',
+                pronouns: 'He/They/It',
+                gender: 'Male',
+                sexuality: 'Asexual',
+                aliases: 'Proto',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artiproto-c2.png',
                     'images/c/artiproto-c.png',
                 ],
 
@@ -1550,18 +2086,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Catgirl',
-                cPronouns: 'She/It',
-                cGender: 'Trans-female',
-                cSexuality: 'Demisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Catgirl',
+                pronouns: 'She/It',
+                gender: 'Trans-female',
+                sexuality: 'Demisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/ellie-c.png',
                     'images/c/ellie-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:artiferret',
                         relation: 'Married'
@@ -1577,14 +2113,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Human',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Human',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Heterosexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/amber-c.png',
                     'images/c/amber-c2.png',
                 ],
@@ -1598,14 +2134,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Goat',
-                cPronouns: 'She/Any',
-                cGender: 'Genderfluid',
-                cSexuality: 'Demisexual',
-                cNicknames: '',
-                cAddOns: 'Adopted from <a href="https://x.com/fixy_cookies" target="_blank">Fixy Cookies</a>',
-                cReference: 'images/r/hazel-r.png',
-                cGallery: [
+                species: 'Goat',
+                pronouns: 'She/Any',
+                gender: 'Genderfluid',
+                sexuality: 'Demisexual',
+                aliases: '',
+                characterAttrs: {
+                    'Design Origin': '<a href="https://x.com/fixy_cookies" target="_blank">Fixy Cookies</a>',
+                },
+                extra: '',
+                refsheet: 'images/r/hazel-r.png',
+                gallery: [
                     'images/c/hazel-c.png',
                 ],
 
@@ -1618,14 +2157,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Demisexual',
-                cNicknames: '',
-                cAddOns: 'Adopted from <a href="https://x.com/fixy_cookies" target="_blank">Fixy Cookies</a>',
-                cReference: 'images/r/cerulean-r.png',
-                cGallery: [
+                species: 'Rabbit',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Demisexual',
+                aliases: '',
+                characterAttrs: {
+                    'Design Origin': '<a href="https://x.com/fixy_cookies" target="_blank">Fixy Cookies</a>',
+                },
+                extra: '',
+                refsheet: 'images/r/cerulean-r.png',
+                gallery: [
                     'images/c/cerulean-c.png',
                 ],
 
@@ -1641,7 +2183,7 @@ let menuItems = [
         color: 'var(--color-15)',
         parent: 'deltadim',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'skitty',
                 title: 'Singularikitty',
@@ -1649,29 +2191,39 @@ let menuItems = [
                 detail: `
                 Singularikitty is a black cat with red fur on his arms and legs, orange eyes, and a ring on the tip of his tail. He always wears a collar that holds a small black hole which they can deploy anytime.<br>
                 <br>
-                Skitty's eyes and mouth essentially function as black holes, which sucks in anything that gets nearby. However, she doesn't use this power to harm others, as she is a very kind and gentle cat. SHe constantly warn people to not get nearby his face for that matter.<br>
+                Skitty's eyes and mouth essentially function as black holes, which sucks in anything that gets nearby. However, she doesn't use this power to harm others, as she is a very kind and gentle cat. She constantly warn people to not get nearby his face for that matter.<br>
                 <br>
                 Skitty has an ability to grow or shrink in size as he pleases. He also can toggle the black hole on his collar whenever he wants.<br>
                 <br>
                 'DESTROYER' is the name Skitty given to his black hole.`,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Pangender',
-                cSexuality: 'Aroace',
-                cNicknames: 'Skitty',
-                cAddOns: 'Adopted from <a href="https://x.com/C0denameDelta" target="_blank">C0denameDelta</a>',
-                cReference: 'images/r/skitty-r.png',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'Any Pronouns',
+                gender: 'Pangender',
+                sexuality: 'Aroace',
+                aliases: 'Skitty',
+                characterAttrs: {
+                    'Design Origin': '<a href="https://x.com/C0denameDelta" target="_blank">C0denameDelta</a>',
+                },
+                extra: '',
+                refsheet: 'images/r/skitty-r.png',
+                gallery: [
                     'images/c/skitty-c.png',
                     'images/c/skitty-c2.png',
                     'images/c/skitty-c3.png',
                     'images/c/skitty-c4.png',
                     'images/c/skitty-c5.png',
                     'images/c/skitty-c6.png',
+                    'images/c/skitty-c7.png',
+                    'images/c/skitty-c8.png',
+                    'images/c/skitty-c9.png',
+                    'images/c/skitty-c10.png',
+                    'images/c/skitty-c11.png',
+                    'images/c/skitty-c12.png',
+                    'images/c/skitty-c13.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:gamma',
                         relation: 'Spacekitty Trio'
@@ -1700,22 +2252,24 @@ let menuItems = [
                 'RESTORER' is the name Gamma given to her white hole.`,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/gamma-r.png',
+                gallery: [
                     'images/c/gamma-c.png',
                     'images/c/gamma-c2.png',
                     'images/c/gamma-c3.png',
                     'images/c/gamma-c4.png',
                     'images/c/gamma-c5.png',
                     'images/c/gamma-c6.png',
+                    'images/c/gamma-c7.png',
+                    'images/c/gamma-c9.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:skitty',
                         relation: 'Spacekitty Trio'
@@ -1743,22 +2297,27 @@ let menuItems = [
                 `,
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cSexuality: 'Omnisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/micro-c.png',
+                species: 'Cat',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                sexuality: 'Omnisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/micro-r.png',
+                gallery: [
                     'images/c/micro-c2.png',
+                    'images/c/micro-c.png',
                     'images/c/micro-c3.png',
                     'images/c/micro-c4.png',
                     'images/c/micro-c5.png',
                     'images/c/micro-c6.png',
+                    'images/c/micro-c7.png',
+                    'images/c/micro-c8.png',
+                    'images/c/micro-c9.png',
+                    'images/c/micro-c10.png',
+                    'images/c/micro-c11.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:gamma',
                         relation: 'Spacekitty Trio'
@@ -1778,17 +2337,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Axolotl',
-                cPronouns: 'They/It',
-                cGender: 'Genderless',
-                cSexuality: 'Aromantic',
-                cNicknames: 'Arti, Xio',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Axolotl',
+                pronouns: 'They/It',
+                gender: 'Genderless',
+                sexuality: 'Aromantic',
+                aliases: 'Arti, Xio',
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artilotl-c3.png',
                     'images/c/artilotl-c.png',
                     'images/c/artilotl-c2.png',
-                    'images/c/artilotl-c3.png',
                     'images/c/artilotl-c4.png',
                     'images/c/artilotl-c5.png',
                     'images/c/artilotl-c6.png',
@@ -1803,18 +2362,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Lucani',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Cani',
-                cAddOns: 'Lucani is an open-species created by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a>',
-                cReference: 'images/r/articani-r.png',
-                cGallery: [
+                species: 'Lucani',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Heterosexual',
+                aliases: 'Cani',
+                extra: 'Lucani is an open-species created by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a>!',
+                refsheet: 'images/r/articani-r.png',
+                gallery: [
                     'images/c/articani-c.png',
                     'images/c/articani-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:nayacani',
                         relation: 'Sister'
@@ -1830,15 +2389,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Lucani',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Naya',
-                cAddOns: 'Lucani is an open-species created by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a>',
-                cReference: 'images/r/nayacani-r.png',
-                cGallery: [],
-                cRelations: [
+                species: 'Lucani',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Heterosexual',
+                aliases: 'Naya',
+                extra: 'Lucani is an open-species created by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a>!',
+                refsheet: 'images/r/nayacani-r.png',
+                gallery: [
+                    'images/c/nayacani-c.png',
+                    'images/c/nayacani-c2.png',
+                ],
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:articani',
                         relation: 'Brother'
@@ -1854,14 +2416,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Lucani',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Non-binary',
-                cSexuality: 'Asexual',
-                cNicknames: 'Baryon',
-                cAddOns: 'Lucani is an open-species created by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a>',
-                cReference: 'images/r/ryon-r.png',
-                cGallery: [
+                species: 'Lucani',
+                pronouns: 'Any Pronouns',
+                gender: 'Non-binary',
+                sexuality: 'Asexual',
+                aliases: 'Baryon',
+                extra: 'Lucani is an open-species created by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a>!',
+                refsheet: 'images/r/ryon-r.png',
+                gallery: [
                     'images/c/ryon-c.png',
                 ],
 
@@ -1874,14 +2436,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Mantis',
-                cPronouns: 'She/He/It',
-                cGender: 'Non-binary',
-                cSexuality: 'Aromantic',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Mantis',
+                pronouns: 'She/He/It',
+                gender: 'Non-binary',
+                sexuality: 'Aromantic',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/klora-c.png',
                 ],
 
@@ -1894,18 +2456,21 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Rabbit',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/laniakea-c1.png',
+                    'images/c/laniakea-c3.png',
                     'images/c/laniakea-c2.png',
+                    'images/c/laniakea-c4.png',
+                    'images/c/laniakea-c5.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:vela',
                         relation: 'Significant Other'
@@ -1921,18 +2486,21 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'She/Any',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Rabbit',
+                pronouns: 'She/Any',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/vela-c1.png',
+                    'images/c/vela-c3.png',
                     'images/c/vela-c2.png',
+                    'images/c/vela-c4.png',
+                    'images/c/vela-c5.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-deltaspace:laniakea',
                         relation: 'Significant Other'
@@ -1948,207 +2516,16 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Black Hole',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Non-binary',
-                cSexuality: 'Aroace',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/ichor-r.png',
-                cGallery: [],
+                species: 'Black Hole',
+                pronouns: 'Any Pronouns',
+                gender: 'Non-binary',
+                sexuality: 'Aroace',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/ichor-r.png',
+                gallery: [],
 
                 image: 'images/i/ichor-i.png',
-            },
-        ]
-    },
-    {
-        menuId: 'deltadim-missing',
-        title: 'Missing',
-        subtitle: 'Erased from the timeline',
-        image: 'images/missing.png',
-        color: '#BFBFBF',
-        parent: 'deltadim',
-        hidden: true,
-        labels: [
-            {
-                cardId: 'iafo',
-                title: 'I.A.F.O',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'They/Them',
-                cGender: 'Non-binary',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/iafo.png'
-            },
-            {
-                cardId: 'corinne',
-                title: 'Corinne',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Cat-robot',
-                cPronouns: 'She/Him',
-                cGender: 'Bigender',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/corinne.png'
-            },
-            {
-                cardId: 'neelo',
-                title: 'Neelo',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Lemon cat',
-                cPronouns: 'He/Them',
-                cGender: 'Male',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/neelo.png'
-            },
-            {
-                cardId: 'nala',
-                title: 'Nala',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Bunny',
-                cPronouns: 'She/He/Any',
-                cGender: 'Trans-female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/nala.png'
-            },
-            {
-                cardId: 'ithi',
-                title: 'Ithi',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Robunny',
-                cPronouns: 'She/Any',
-                cGender: 'Female',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/ithi.png'
-            },
-            {
-                cardId: 'yolk',
-                title: 'Yolk',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Macroscopic single-celled organism',
-                cPronouns: 'They/She/Any',
-                cGender: 'Genderless',
-                cSexuality: 'Aroace',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/yolk.png'
-            },
-            {
-                cardId: 'ashy',
-                title: 'Ashy',
-                subtitle: '',
-                cAddOns: ``,
-                detail: ``,
-                isCharacter: true,
-                cSpecies: 'Multispecies',
-                cPronouns: 'She/Her',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cReference: '',
-                cGallery: [],
-                image: 'images/i/ashy.png'
-            },
-            {
-                cardId: 'shirley',
-                title: 'Shirley',
-                subtitle: '',
-                detail: `
-                Shirley is an orange cat-fox hybrid with white fur on her ears, muzzle, chest, abdomen, and the tip of her tail. Her eyes are yellow and her pawpads and inner ears are orange.<br>
-                <br>
-                She lives with her boyfriend Rose, and works as a barista at a local cafe in Chromasia. She also loves gardening and taking care of pretty flowers.`,
-
-                isCharacter: true,
-                cSpecies: 'Cat + Fox',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Manda, Alamanda',
-                cAddOns: '',
-                cReference: 'images/r/shirley-r.png',
-                cGallery: [
-                    'images/c/shirley-c.png',
-                    'images/c/shirley-c2.png',
-                    'images/c/shirley-c3.png',
-                    'images/c/shirley-c4.png',
-                    'images/c/shirley-c5.png',
-                    'images/c/shirley-c6.png',
-                ],
-                cRelations: [
-                    {
-                        cardId: 'deltadim-missing:rose',
-                        relation: 'Significant Other'
-                    },
-                ],
-
-                image: 'images/i/shirley-i.png',
-            },
-            {
-                cardId: 'rose',
-                title: 'Rose',
-                subtitle: '',
-                detail: `
-                Rose is a green fox with red fur covering his head and tail, and dark green neck fur. In fact, his color schemes and fur patterns look like a typical rose flower.<br>
-                <br>
-                Rose really likes the color pink. He can often be seen wearing pink sweaters and skirts or trousers. He doesn't mind being called cute or pretty despite being a male.<br>
-                <br>
-                He works as a farmer in Chromasia, growing various kinds of crops to sell at the local market.`,
-
-                isCharacter: true,
-                cSpecies: 'Fox',
-                cPronouns: 'He/Any',
-                cGender: 'Male',
-                cSexuality: 'Heterosexual',
-                cNicknames: 'Rosey',
-                cAddOns: '',
-                cReference: 'images/r/rose-r.png',
-                cGallery: [
-                    'images/c/rose-c.png',
-                    'images/c/rose-c2.png',
-                    'images/c/rose-c3.png',
-                    'images/c/rose-c4.png',
-                ],
-                cRelations: [
-                    {
-                        cardId: 'deltadim-missing:shirley',
-                        relation: 'Significant Other'
-                    },
-                ],
-
-                image: 'images/i/rose-i.png',
             },
         ]
     },
@@ -2162,8 +2539,11 @@ let menuItems = [
         subtitle: 'Florie Universe',
         image: 'icons/floriverse.png',
         color: 'var(--color-2)',
+        gridColor: 'var(--color-2)',
+        gridColor2: 'var(--accent2)',
+        gridOpacity: 0.1,
         orbit: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'info',
                 title: 'Info',
@@ -2222,16 +2602,16 @@ let menuItems = [
         image: 'images/fvuncat-i.png',
         color: 'var(--color-11)',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'fvZep',
                 title: 'Zep',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Alien flower',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/Zep.png',
+                species: 'Alien flower',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/Zep.png'],
                 detail: '',
                 image: 'images/flories/uncat/Zep.png'
             },
@@ -2240,10 +2620,10 @@ let menuItems = [
                 title: 'Mintscreen',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Robot florie',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Mintscreen.png',
+                species: 'Robot florie',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Mintscreen.png'],
                 detail: '',
                 image: 'images/flories/uncat/Mintscreen.png'
             },
@@ -2252,10 +2632,10 @@ let menuItems = [
                 title: 'Kau',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cauliflower',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/Kau.png',
+                species: 'Cauliflower',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/Kau.png'],
                 detail: '',
                 image: 'images/flories/uncat/Kau.png'
             },
@@ -2264,10 +2644,10 @@ let menuItems = [
                 title: 'Sweetbreaker',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Sweetbreaker.png',
+                species: 'Tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Sweetbreaker.png'],
                 detail: '',
                 image: 'images/flories/uncat/Sweetbreaker.png'
             },
@@ -2276,10 +2656,10 @@ let menuItems = [
                 title: 'Cuby',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Slimy blueberry',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Cuby.png',
+                species: 'Slimy blueberry',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Cuby.png'],
                 detail: '',
                 image: 'images/flories/uncat/Cuby.png'
             },
@@ -2288,10 +2668,10 @@ let menuItems = [
                 title: 'Blizzi',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Ice flower',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/Blizzi.png',
+                species: 'Ice flower',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/Blizzi.png'],
                 detail: '',
                 image: 'images/flories/uncat/Blizzi.png'
             },
@@ -2300,10 +2680,10 @@ let menuItems = [
                 title: 'Plugika',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Electric plug florie',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Plugika.png',
+                species: 'Electric plug florie',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Plugika.png'],
                 detail: '',
                 image: 'images/flories/uncat/Plugika.png'
             },
@@ -2312,10 +2692,10 @@ let menuItems = [
                 title: 'Tessa',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/uncat/Tessa.png',
+                species: 'Tulip',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/uncat/Tessa.png'],
                 detail: '',
                 image: 'images/flories/uncat/Tessa.png'
             },
@@ -2324,10 +2704,10 @@ let menuItems = [
                 title: 'Gem',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Gem',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Gem.png',
+                species: 'Gem',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Gem.png'],
                 detail: '',
                 image: 'images/flories/uncat/Gem.png'
             },
@@ -2336,10 +2716,10 @@ let menuItems = [
                 title: 'Anvre',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Anvre.png',
+                species: 'Tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Anvre.png'],
                 detail: '',
                 image: 'images/flories/uncat/Anvre.png'
             },
@@ -2348,10 +2728,10 @@ let menuItems = [
                 title: 'Latrice',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Bellflower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Latrice.png',
+                species: 'Bellflower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Latrice.png'],
                 detail: '',
                 image: 'images/flories/uncat/Latrice.png'
             },
@@ -2360,10 +2740,10 @@ let menuItems = [
                 title: 'Cactun & Pipin',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cactus',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/CactunAndPipin.png',
+                species: 'Cactus',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/CactunAndPipin.png'],
                 detail: '',
                 image: 'images/flories/uncat/CactunAndPipin.png'
             },
@@ -2372,10 +2752,10 @@ let menuItems = [
                 title: 'Sa',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Sawblade Flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Sa.png',
+                species: 'Sawblade Flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Sa.png'],
                 detail: '',
                 image: 'images/flories/uncat/Sa.png'
             },
@@ -2384,10 +2764,10 @@ let menuItems = [
                 title: 'Chloe',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Four',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Chloe.png',
+                species: 'Four',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Chloe.png'],
                 detail: '',
                 image: 'images/flories/uncat/Chloe.png'
             },
@@ -2398,14 +2778,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Roboflorie',
-                cPronouns: 'She/It',
-                cGender: 'Female',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/flories/uncat/Teknia.png',
-                cGallery: [
+                species: 'Roboflorie',
+                pronouns: 'She/It',
+                gender: 'Female',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/flories/uncat/Teknia.png',
+                gallery: [
                     'images/c/teknia-c.png',
                 ],
 
@@ -2416,13 +2796,17 @@ let menuItems = [
                 title: 'Artiflow',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Hepatica',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Artiflow.png',
-                cAddOns: '',
+                species: 'Hepatica',
+                pronouns: 'She',
+                gender: 'Female',
+                refsheet: 'images/flories/uncat/Artiflow.png',
+                extra: '',
                 detail: '',
-                cRelations: [
+                gallery: [
+                    'images/c/artiflow-c.png',
+                    'images/c/artiflow-c2.png'
+                ],
+                relatives: [
                     {
                         cardId: 'floriverse-uncat:fvArtidell',
                         relation: 'Significant Other'
@@ -2435,13 +2819,16 @@ let menuItems = [
                 title: 'Artidell',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Catdelion',
-                cPronouns: 'He/She',
-                cGender: 'Bigender',
-                cReference: 'images/flories/uncat/Artidell.png',
-                cAddOns: '',
+                species: 'Catdelion',
+                pronouns: 'He/She',
+                gender: 'Bigender',
+                refsheet: 'images/flories/uncat/Artidell.png',
+                extra: '',
                 detail: '',
-                cRelations: [
+                gallery: [
+                    'images/c/artidell-c.png'
+                ],
+                relatives: [
                     {
                         cardId: 'floriverse-uncat:fvArtiflow',
                         relation: 'Significant Other'
@@ -2454,10 +2841,10 @@ let menuItems = [
                 title: 'Kappa',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Sunflower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Kappa.png',
+                species: 'Sunflower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Kappa.png'],
                 detail: '',
                 image: 'images/flories/uncat/Kappa.png'
             },
@@ -2466,10 +2853,10 @@ let menuItems = [
                 title: 'Sunflette',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Sunflower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Sunflette.png',
+                species: 'Sunflower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Sunflette.png'],
                 detail: '',
                 image: 'images/flories/uncat/Sunflette.png'
             },
@@ -2478,10 +2865,10 @@ let menuItems = [
                 title: 'Strawrberry',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Strawberrikitty',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Strawrberry.png',
+                species: 'Strawberrikitty',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Strawrberry.png'],
                 detail: '',
                 image: 'images/flories/uncat/Strawrberry.png'
             },
@@ -2490,10 +2877,10 @@ let menuItems = [
                 title: 'Lyte',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Robot berry',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Lyte.png',
+                species: 'Robot berry',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Lyte.png'],
                 detail: '',
                 image: 'images/flories/uncat/Lyte.png'
             },
@@ -2502,10 +2889,10 @@ let menuItems = [
                 title: 'Fyra',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Fyra.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Fyra.png'],
                 detail: '',
                 image: 'images/flories/uncat/Fyra.png'
             },
@@ -2514,10 +2901,10 @@ let menuItems = [
                 title: 'Therra',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Therra.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Therra.png'],
                 detail: '',
                 image: 'images/flories/uncat/Therra.png'
             },
@@ -2526,10 +2913,10 @@ let menuItems = [
                 title: 'DJ Museberry',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Berry',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/DJMuseberry.png',
+                species: 'Berry',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/DJMuseberry.png'],
                 detail: '',
                 image: 'images/flories/uncat/DJMuseberry.png'
             },
@@ -2538,11 +2925,14 @@ let menuItems = [
                 title: 'Lineko',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cat lemon',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Lineko.png',
+                species: 'Cat lemon',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Lineko.png'],
                 detail: '',
+                gallery: [
+                    'images/c/lineko-c.png'
+                ],
                 image: 'images/flories/uncat/Lineko.png'
             },
             {
@@ -2550,10 +2940,10 @@ let menuItems = [
                 title: 'Pompy',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Allium',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Pompy.png',
+                species: 'Allium',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Pompy.png'],
                 detail: '',
                 image: 'images/flories/uncat/Pompy.png'
             },
@@ -2562,10 +2952,10 @@ let menuItems = [
                 title: 'Beep',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/uncat/Beep.png',
+                species: 'Tulip',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/uncat/Beep.png'],
                 detail: '',
                 image: 'images/flories/uncat/Beep.png'
             },
@@ -2574,10 +2964,10 @@ let menuItems = [
                 title: 'Sweetree',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Candy tree',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/Sweetree.png',
+                species: 'Candy tree',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/Sweetree.png'],
                 detail: '',
                 image: 'images/flories/uncat/Sweetree.png'
             },
@@ -2586,10 +2976,10 @@ let menuItems = [
                 title: 'Eco',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cloudy cottonflower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Eco.png',
+                species: 'Cloudy cottonflower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Eco.png'],
                 detail: '',
                 image: 'images/flories/uncat/Eco.png'
             },
@@ -2598,10 +2988,10 @@ let menuItems = [
                 title: 'Cryoflow',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Frozen flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Cryoflow.png',
+                species: 'Frozen flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Cryoflow.png'],
                 detail: '',
                 image: 'images/flories/uncat/Cryoflow.png'
             },
@@ -2610,10 +3000,10 @@ let menuItems = [
                 title: 'Delia',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Dandelion',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Delia.png',
+                species: 'Dandelion',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Delia.png'],
                 detail: '',
                 image: 'images/flories/uncat/Delia.png'
             },
@@ -2622,10 +3012,10 @@ let menuItems = [
                 title: 'Spinny',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Berry with wind turbine',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Spinny.png',
+                species: 'Berry with wind turbine',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Spinny.png'],
                 detail: '',
                 image: 'images/flories/uncat/Spinny.png'
             },
@@ -2634,10 +3024,10 @@ let menuItems = [
                 title: 'Aero',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Baloon tulip',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/uncat/Aero.png',
+                species: 'Baloon tulip',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/uncat/Aero.png'],
                 detail: '',
                 image: 'images/flories/uncat/Aero.png'
             },
@@ -2646,10 +3036,10 @@ let menuItems = [
                 title: 'Enila',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Fruit with broken stem',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Enila.png',
+                species: 'Fruit with broken stem',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Enila.png'],
                 detail: '',
                 image: 'images/flories/uncat/Enila.png'
             },
@@ -2658,10 +3048,10 @@ let menuItems = [
                 title: 'Tikao',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Megaphone',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Tikao.png',
+                species: 'Megaphone',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Tikao.png'],
                 detail: '',
                 image: 'images/flories/uncat/Tikao.png'
             },
@@ -2670,10 +3060,10 @@ let menuItems = [
                 title: 'Flaany',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Upside',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Flaany.png',
+                species: 'Upside',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Flaany.png'],
                 detail: '',
                 image: 'images/flories/uncat/Flaany.png'
             },
@@ -2682,10 +3072,10 @@ let menuItems = [
                 title: 'B-na',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/B-na.png',
+                species: 'Tulip',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/B-na.png'],
                 detail: '',
                 image: 'images/flories/uncat/B-na.png'
             },
@@ -2694,10 +3084,10 @@ let menuItems = [
                 title: 'Kraka',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cactus monster',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Kraka.png',
+                species: 'Cactus monster',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Kraka.png'],
                 detail: '',
                 image: 'images/flories/uncat/Kraka.png'
             },
@@ -2706,10 +3096,10 @@ let menuItems = [
                 title: 'Azerium',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Robot tulip',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/Azerium.png',
+                species: 'Robot tulip',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/Azerium.png'],
                 detail: '',
                 image: 'images/flories/uncat/Azerium.png'
             },
@@ -2718,10 +3108,10 @@ let menuItems = [
                 title: 'Vo',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Ghost tulip',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/uncat/Vo.png',
+                species: 'Ghost tulip',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/uncat/Vo.png'],
                 detail: '',
                 image: 'images/flories/uncat/Vo.png'
             },
@@ -2730,10 +3120,10 @@ let menuItems = [
                 title: 'Smog',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Pollutant',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/uncat/Smog.png',
+                species: 'Pollutant',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/uncat/Smog.png'],
                 detail: '',
                 image: 'images/flories/uncat/Smog.png'
             },
@@ -2742,10 +3132,10 @@ let menuItems = [
                 title: 'Niane',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Niane.png',
+                species: 'Tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Niane.png'],
                 detail: '',
                 image: 'images/flories/uncat/Niane.png'
             },
@@ -2754,10 +3144,10 @@ let menuItems = [
                 title: 'Neru',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Neru.png',
+                species: 'Tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Neru.png'],
                 detail: '',
                 image: 'images/flories/uncat/Neru.png'
             },
@@ -2766,10 +3156,10 @@ let menuItems = [
                 title: 'Viona',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Venus flytrap',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Viona.png',
+                species: 'Venus flytrap',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Viona.png'],
                 detail: '',
                 image: 'images/flories/uncat/Viona.png'
             },
@@ -2778,10 +3168,10 @@ let menuItems = [
                 title: 'Phyana',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Phyana.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Phyana.png'],
                 detail: '',
                 image: 'images/flories/uncat/Phyana.png'
             },
@@ -2790,10 +3180,10 @@ let menuItems = [
                 title: 'Nell',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Popcorn??',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/uncat/Nell.png',
+                species: 'Popcorn??',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/uncat/Nell.png'],
                 detail: '',
                 image: 'images/flories/uncat/Nell.png'
             },
@@ -2802,10 +3192,10 @@ let menuItems = [
                 title: 'Voni',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Void tulip',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/uncat/Voni.png',
+                species: 'Void tulip',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/uncat/Voni.png'],
                 detail: '',
                 image: 'images/flories/uncat/Voni.png'
             },
@@ -2814,10 +3204,10 @@ let menuItems = [
                 title: 'Mizudria',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Mizudria.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Mizudria.png'],
                 detail: '',
                 image: 'images/flories/uncat/Mizudria.png'
             },
@@ -2826,10 +3216,10 @@ let menuItems = [
                 title: 'Suneea',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Sunflower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Suneea.png',
+                species: 'Sunflower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Suneea.png'],
                 detail: '',
                 image: 'images/flories/uncat/Suneea.png'
             },
@@ -2838,10 +3228,10 @@ let menuItems = [
                 title: 'Acidzer',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Acid tulip',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/uncat/Acidzer.png',
+                species: 'Acid tulip',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/uncat/Acidzer.png'],
                 detail: '',
                 image: 'images/flories/uncat/Acidzer.png'
             },
@@ -2850,10 +3240,10 @@ let menuItems = [
                 title: 'Mia',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Potted plant',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/uncat/Mia.png',
+                species: 'Potted plant',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/uncat/Mia.png'],
                 detail: '',
                 image: 'images/flories/uncat/Mia.png'
             }
@@ -2867,20 +3257,41 @@ let menuItems = [
         image: 'images/fv-i.png',
         color: 'var(--color-16)',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'fvvInfo',
-                title: 'Info',
-                subtitle: 'Information about the Floriverse Album',
+                title: 'Album Information',
+                subtitle: 'Floriverse',
                 banner: true,
                 detail: `
                     Released: October 5th, 2023<br>
                     Total tracks: 10<br>
                     Total length: 32m 16s<br>
-                    <a href="https://open.spotify.com/album/0AGxggSyuXqGdYLk0D7pbF?si=4Eej22G-RcOnbu8XIagHWQ" target="_blank">Spotify album link</a><br>
+                    <br>
+                    <a href="https://open.spotify.com/album/0AGxggSyuXqGdYLk0D7pbF?si=4Eej22G-RcOnbu8XIagHWQ" target="_blank">Spotify Album</a><br>
+                    <a href="https://artifyber.bandcamp.com/album/floriverse" target="_blank">Bandcamp Release</a><br>
                     <h2>Album Cover:</h2><br>
                     <img src="images/fv-i.png" data-caption="Floriverse" data-subcaption="Album cover for Floriverse"><br>
                     `,
+                sections: [
+                    {
+                        title: 'Tracklist',
+                        detail: `
+                            <div class="container">
+                                ${internalCard({ href: "floriverse-vanilla:fvvPotto", banner: true, title: "1 - Grow!", subtitle: "02:19" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvTwinkle", banner: true, title: "2 - Starfruit Garden", subtitle: "02:26" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvStrawmon", banner: true, title: "3 - Fruity Bounce", subtitle: "02:08" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvNocto", banner: true, title: "4 - Nocturnal Photosynthesis", subtitle: "04:41" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvFurflow", banner: true, title: "5 - Catdelions", subtitle: "03:15" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvPana", banner: true, title: "6 - Pancake Pancake Pancake Pancake", subtitle: "02:58" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvPinkly", banner: true, title: "7 - Tulips", subtitle: "02:51" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvKosmaya", banner: true, title: "8 - Exoplants", subtitle: "05:15" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvMincha", banner: true, title: "9 - Jasmine Tea", subtitle: "03:05" })}
+                                ${internalCard({ href: "floriverse-vanilla:fvvLan", banner: true, title: "10 - Moonflower", subtitle: "03:12" })}
+                            </div>
+                        `,
+                    }
+                ],
                 image: 'images/fv-i.png'
             },
             {
@@ -2888,11 +3299,19 @@ let menuItems = [
                 title: 'Potto',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Potted plant',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fv-potto.png',
+                species: 'Potted plant',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fv-potto.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4gdYjAljNAoRtL5TM7lZ13?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-potto.png'
             },
             {
@@ -2900,11 +3319,19 @@ let menuItems = [
                 title: 'Twinkle',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Star flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fv-twinkle.png',
+                species: 'Star flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fv-twinkle.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0BZTvGvSh3jy7vAsPgzIq8?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-twinkle.png'
             },
             {
@@ -2912,11 +3339,19 @@ let menuItems = [
                 title: 'Strawmon',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Glass',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fv-strawmon.png',
+                species: 'Glass',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fv-strawmon.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/7nNNU3DWb44jYQ58rhyPhC?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-strawmon.png'
             },
             {
@@ -2924,11 +3359,19 @@ let menuItems = [
                 title: 'Nocto',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Spirit tulip',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fv-nocto.png',
+                species: 'Spirit tulip',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fv-nocto.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2wr0z9kPBz3vaUUCeFKyJ0?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-nocto.png'
             },
             {
@@ -2938,24 +3381,33 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Catdelion',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/c/furflow-c.png',
-                cGallery: [
-                    'images/flories/fv-furflow.png',
+                species: 'Catdelion',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/c/furflow-c.png',
+                gallery: [
                     'images/c/furflow-c2.png',
                     'images/c/furflow-c3.png',
                     'images/c/furflow-c4.png',
+                    'images/c/furflow-c5.png',
+                    'images/flories/fv-furflow.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'floriverse-epsilon:fveMisty',
                         relation: 'Significant Other'
                     },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6TtpP74DZMui1A1yW2ZkgF?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
                 ],
 
                 image: 'images/c/furflow-c.png'
@@ -2965,47 +3417,85 @@ let menuItems = [
                 title: 'Pana',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Pancake tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fv-pana.png',
+                species: 'Pancake tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fv-pana.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-delta:fvdYana',
+                        relation: 'Younger Sister'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5if8Q8xC4zO3c3cnxsrLME?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-pana.png'
-            },
-            {
-                cardId: 'fvvKosmaya',
-                title: 'Kosmaya',
-                subtitle: '',
-                isCharacter: true,
-                cSpecies: 'Exotic flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fv-kosmaya.png',
-                detail: '',
-                image: 'images/flories/fv-kosmaya.png'
             },
             {
                 cardId: 'fvvPinkly',
                 title: 'Pinkly',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fv-pinkly.png',
+                species: 'Tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fv-pinkly.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/41AoLmWUjKgKoXwvuTtOlf?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-pinkly.png'
+            },
+            {
+                cardId: 'fvvKosmaya',
+                title: 'Kosmaya',
+                subtitle: '',
+                isCharacter: true,
+                species: 'Exotic flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fv-kosmaya.png'],
+                detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0JqRjWreUkC8D8k0jkT1tH?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
+                image: 'images/flories/fv-kosmaya.png'
             },
             {
                 cardId: 'fvvMincha',
                 title: 'Mincha',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Jasmine',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fv-mincha.png',
+                species: 'Jasmine',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fv-mincha.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/71YSihtpFEGwW6KNlrRvwq?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-mincha.png'
             },
             {
@@ -3013,11 +3503,19 @@ let menuItems = [
                 title: 'Lan',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Lemon',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fv-lan.png',
+                species: 'Lemon',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fv-lan.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/47gXi6wzLJByNOhF3NHIoh?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fv-lan.png'
             }
         ]
@@ -3030,20 +3528,63 @@ let menuItems = [
         image: 'images/fvd-i.png',
         color: 'var(--color-1)',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'fvdInfo',
-                title: 'Info',
-                subtitle: 'Information about the Floriverse : Delta Album',
+                title: 'Album Information',
+                subtitle: 'Floriverse : Delta',
                 banner: true,
                 detail: `
                     Released: March 3rd, 2024<br>
                     Total tracks: 32<br>
                     Total length: 1hr 37m<br>
-                    <a href="https://open.spotify.com/album/2PNIG5k8lEGQ6fSuMUn7ir?si=BO2liD1rSpq7Wna6xTksYQ" target="_blank">Spotify album link</a><br>
+                    <br>
+                    <a href="https://open.spotify.com/album/2PNIG5k8lEGQ6fSuMUn7ir?si=BO2liD1rSpq7Wna6xTksYQ" target="_blank">Spotify Album</a><br>
+                    <a href="https://artifyber.bandcamp.com/album/floriverse-delta" target="_blank">Bandcamp Release</a><br>
                     <h2>Album Cover:</h2><br>
                     <img src="images/fvd-i.png" data-caption="Floriverse : Delta" data-subcaption="Album cover for Floriverse : Delta"><br>
                     `,
+                sections: [
+                    {
+                        title: 'Tracklist',
+                        detail: `
+                        <div class="container">
+                            ${internalCard({ href: "floriverse-delta:fvdStarple", banner: true, title: "1 - Zenith", subtitle: "03:04" })}
+                            ${internalCard({ href: "floriverse-delta:fvdChrora", banner: true, title: "2 - Aurora", subtitle: "02:19" })}
+                            ${internalCard({ href: "floriverse-delta:fvdOrply", banner: true, title: "3 - Midnight Drawing", subtitle: "03:03" })}
+                            ${internalCard({ href: "floriverse-delta:fvdTiram", banner: true, title: "4 - Spores", subtitle: "04:01" })}
+                            ${internalCard({ href: "floriverse-delta:fvdNimibi", banner: true, title: "5 - Dreamy Sunflower", subtitle: "02:40" })}
+                            ${internalCard({ href: "floriverse-delta:fvdSlump", banner: true, title: "6 - Oxygen", subtitle: "02:33" })}
+                            ${internalCard({ href: "floriverse-delta:fvdPio", banner: true, title: "7 - Vitaelek", subtitle: "03:15" })}
+                            ${internalCard({ href: "floriverse-delta:fvdYana", banner: true, title: "8 - Midnight Honey", subtitle: "03:07" })}
+                            ${internalCard({ href: "floriverse-delta:fvdLooni", banner: true, title: "9 - You Are My Star", subtitle: "02:54" })}
+                            ${internalCard({ href: "floriverse-delta:fvdChocopop", banner: true, title: "10 - JUST KIDDING!!", subtitle: "02:56" })}
+                            ${internalCard({ href: "floriverse-delta:fvdStaz", banner: true, title: "11 - Pistachio", subtitle: "02:23" })}
+                            ${internalCard({ href: "floriverse-delta:fvdDelly", banner: true, title: "12 - Catdelions II", subtitle: "03:05" })}
+                            ${internalCard({ href: "floriverse-delta:fvdSprinkly", banner: true, title: "13 - Happy Cakeday", subtitle: "02:49" })}
+                            ${internalCard({ href: "floriverse-delta:fvdEcno", banner: true, title: "14 - Tripetals", subtitle: "02:24" })}
+                            ${internalCard({ href: "floriverse-delta:fvdDisaton", banner: true, title: "15 - WATA KASHI", subtitle: "02:48" })}
+                            ${internalCard({ href: "floriverse-delta:fvdProtoberries", banner: true, title: "16 - Mixed Berries", subtitle: "03:08" })}
+                            ${internalCard({ href: "floriverse-delta:fvdPipix", banner: true, title: "17 - Pixel Florie", subtitle: "03:02" })}
+                            ${internalCard({ href: "floriverse-delta:fvdPico", banner: true, title: "18 - Pico", subtitle: "02:47" })}
+                            ${internalCard({ href: "floriverse-delta:fvdStarlila", banner: true, title: "19 - I Love You!!!", subtitle: "02:08" })}
+                            ${internalCard({ href: "floriverse-delta:fvdWina", banner: true, title: "20 - SRLAOANOEETVLEEYDS", subtitle: "04:28" })}
+                            ${internalCard({ href: "floriverse-delta:fvdFret", banner: true, title: "21 - Metal Plate Petal Melta", subtitle: "03:38" })}
+                            ${internalCard({ href: "floriverse-delta:fvdAzka", banner: true, title: "22 - Ascension", subtitle: "02:47" })}
+                            ${internalCard({ href: "floriverse-delta:fvdCherro", banner: true, title: "23 - Tomato", subtitle: "03:13" })}
+                            ${internalCard({ href: "floriverse-delta:fvdFloorion", banner: true, title: "24 - 5122", subtitle: "03:22" })}
+                            ${internalCard({ href: "floriverse-delta:fvdStellA", banner: true, title: "25 - Interstella", subtitle: "03:51" })}
+                            ${internalCard({ href: "floriverse-delta:fvdNully", banner: true, title: "26 - Nu15", subtitle: "02:21" })}
+                            ${internalCard({ href: "floriverse-delta:fvdDatum", banner: true, title: "27 - Artificial Sprouts", subtitle: "03:30" })}
+                            ${internalCard({ href: "floriverse-delta:fvdPoloniloo", banner: true, title: "28 - stem.cut", subtitle: "03:09" })}
+                            ${internalCard({ href: "floriverse-delta:fvdGrayscale", banner: true, title: "29 - Colorblind", subtitle: "02:57" })}
+                            ${internalCard({ href: "floriverse-delta:fvdErwith", banner: true, title: "30 - Anxiety", subtitle: "02:40" })}
+                            ${internalCard({ href: "floriverse-delta:fvdFyzer", banner: true, title: "31 - ,", subtitle: "02:25" })}
+                            ${internalCard({ href: "floriverse-delta:fvdKloroforo", banner: true, title: "32 - Xilem", subtitle: "04:44" })}
+                        </div>
+                        `
+                    }
+                ],
                 image: 'images/fvd-i.png'
             },
             {
@@ -3051,11 +3592,19 @@ let menuItems = [
                 title: 'Starple',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-starple.png',
+                species: 'Tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-starple.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6qwqbRGdEyxusUFDCzsZPT?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-starple.png'
             },
             {
@@ -3063,11 +3612,19 @@ let menuItems = [
                 title: 'Chrora',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Exotic flower',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cReference: 'images/flories/fvd-chrora.png',
+                species: 'Exotic flower',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                gallery: ['images/flories/fvd-chrora.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6hqhGbC6nbp0tJxk3U4Grw?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-chrora.png'
             },
             {
@@ -3075,11 +3632,19 @@ let menuItems = [
                 title: 'Orply',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-orply.png',
+                species: 'Tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-orply.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/1M31eXSdpJeaDPZpCpQBUG?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-orply.png'
             },
             {
@@ -3087,11 +3652,25 @@ let menuItems = [
                 title: 'Tiram',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Mushroom',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-tiram.png',
+                species: 'Mushroom',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-tiram.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-epsilon:fveZoey',
+                        relation: 'Sibling'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4IODkTlrmrOPUGX6tXjCxv?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-tiram.png'
             },
             {
@@ -3099,11 +3678,19 @@ let menuItems = [
                 title: 'Nimibi',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cloudy flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-nimibi.png',
+                species: 'Cloudy flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-nimibi.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2oTb7PEEwCp2HJXGJeboL5?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-nimibi.png'
             },
             {
@@ -3111,11 +3698,19 @@ let menuItems = [
                 title: 'Slump',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Rock with kelps',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-slump.png',
+                species: 'Rock with kelps',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-slump.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3OzDbbEDCeN68ODbpCFJ19?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-slump.png'
             },
             {
@@ -3123,11 +3718,19 @@ let menuItems = [
                 title: 'Pio',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Berry',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-pio.png',
+                species: 'Berry',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-pio.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3Fc9G9SBRr0tawPhs230nv?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-pio.png'
             },
             {
@@ -3135,11 +3738,29 @@ let menuItems = [
                 title: 'Yana',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-yana.png',
+                species: 'Tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-yana.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-epsilon:fveNila',
+                        relation: 'Significant Other'
+                    },
+                    {
+                        cardId: 'floriverse-vanilla:fvvPana',
+                        relation: 'Older Sister'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6lVBWrXkQDo9lvg3DCvfKk?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-yana.png'
             },
             {
@@ -3147,11 +3768,19 @@ let menuItems = [
                 title: 'Looni',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Fruit',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-looni.png',
+                species: 'Fruit',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-looni.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/72hvp8jiR2gEygYGwdI6sP?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-looni.png'
             },
             {
@@ -3159,11 +3788,19 @@ let menuItems = [
                 title: 'Chocopop',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Chocoflower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-chocopop.png',
+                species: 'Chocoflower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-chocopop.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0XEm6ZNg8aJEbJXfXHiw5G?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-chocopop.png'
             },
             {
@@ -3171,11 +3808,19 @@ let menuItems = [
                 title: 'Staz',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Pistachio',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-staz.png',
+                species: 'Pistachio',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-staz.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0AfF2Wd7GjJHCEtiOXxkUM?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-staz.png'
             },
             {
@@ -3183,11 +3828,19 @@ let menuItems = [
                 title: 'Delly',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Catdelion',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-delly.png',
+                species: 'Catdelion',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-delly.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5OP8fr2erUsz19SyVoE9LR?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-delly.png'
             },
             {
@@ -3195,11 +3848,19 @@ let menuItems = [
                 title: 'Sprinkly',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Potted cakeflower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-sprinkly.png',
+                species: 'Potted cakeflower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-sprinkly.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2k4OSOLNmQYkdPHqJiaPKp?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-sprinkly.png'
             },
             {
@@ -3207,11 +3868,19 @@ let menuItems = [
                 title: 'Ecno',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Multi',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fvd-ecno.png',
+                species: 'Multi',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fvd-ecno.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3nXURiIDCHS7sgWm5HK3D1?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-ecno.png'
             },
             {
@@ -3219,11 +3888,19 @@ let menuItems = [
                 title: 'Disaton',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cottonbun',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-disaton.png',
+                species: 'Cottonbun',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-disaton.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2OIRp2Szn2NCLasBAa9dLE?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-disaton.png'
             },
             {
@@ -3231,11 +3908,19 @@ let menuItems = [
                 title: 'Protoberries',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Berries',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fvd-protoberries.png',
+                species: 'Berries',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fvd-protoberries.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/1CinvvQMgABDkN8XjEOaqr?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-protoberries.png'
             },
             {
@@ -3243,11 +3928,19 @@ let menuItems = [
                 title: 'Pipix',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Pixel flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-pipix.png',
+                species: 'Pixel flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-pipix.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4ABYxyGWirHUon4Yyn1cI6?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-pipix.png'
             },
             {
@@ -3255,11 +3948,19 @@ let menuItems = [
                 title: 'Pico',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Robot flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-pico.png',
+                species: 'Robot flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-pico.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0QNRQ9sOAhJuQ2npMhWTPB?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-pico.png'
             },
             {
@@ -3267,11 +3968,19 @@ let menuItems = [
                 title: 'Starlila',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Transgender flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-starlila.png',
+                species: 'Transgender flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-starlila.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4jBPsvM3xLINdFRGFrI6nw?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-starlila.png'
             },
             {
@@ -3279,11 +3988,29 @@ let menuItems = [
                 title: 'Wina',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Charred flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-wina.png',
+                species: 'Charred flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-wina.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'nansenz:mu',
+                        relation: 'Multiversal Friend'
+                    },
+                    {
+                        cardId: 'floriverse-epsilon:fveCorrode',
+                        relation: 'Cousin'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2aG9OgByL6HMnuBpbhBtZq?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-wina.png'
             },
             {
@@ -3291,11 +4018,19 @@ let menuItems = [
                 title: 'Fret',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-fret.png',
+                species: 'Tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-fret.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3ZgXT9ubENobpWYAwLByuG?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-fret.png'
             },
             {
@@ -3303,11 +4038,19 @@ let menuItems = [
                 title: 'Azka',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Angel',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fvd-azka.png',
+                species: 'Angel',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fvd-azka.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6CDOwxkjeeKlUQ9slp7HH1?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-azka.png'
             },
             {
@@ -3315,11 +4058,19 @@ let menuItems = [
                 title: 'Cherro',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tomatoes',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fvd-cherro.png',
+                species: 'Tomatoes',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fvd-cherro.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6cWkPhZdRFrEfXHt4VTdaF?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-cherro.png'
             },
             {
@@ -3327,11 +4078,19 @@ let menuItems = [
                 title: 'Floorion',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Potted robot flower',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fvd-floorion.png',
+                species: 'Potted robot flower',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fvd-floorion.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/08a6zLGmgnz7E6ERRVs8MG?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-floorion.png'
             },
             {
@@ -3339,11 +4098,19 @@ let menuItems = [
                 title: 'Stell-A',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Black hole flower',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fvd-stell-a.png',
+                species: 'Black hole flower',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fvd-stell-a.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2gDE5ZevrFWTm2DbAyoKSa?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-stell-a.png'
             },
             {
@@ -3351,11 +4118,19 @@ let menuItems = [
                 title: 'Nully',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: ' ',
-                cPronouns: ' ',
-                cGender: ' ',
-                cReference: 'images/flories/fvd-nully.png',
+                species: ' ',
+                pronouns: ' ',
+                gender: ' ',
+                gallery: ['images/flories/fvd-nully.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0ksaxbYkDiQdUWs9AhuxZv?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-nully.png'
             },
             {
@@ -3363,11 +4138,19 @@ let menuItems = [
                 title: 'Datum',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Digital flower',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fvd-datum.png',
+                species: 'Digital flower',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fvd-datum.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/16qNFlojlNYe8cGGfawMbj?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-datum.png'
             },
             {
@@ -3375,11 +4158,19 @@ let menuItems = [
                 title: 'Poloniloo',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Polonium flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-poloniloo.png',
+                species: 'Polonium flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-poloniloo.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3ZzHlAWcRPORwAjL1hqOdc?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-poloniloo.png'
             },
             {
@@ -3387,11 +4178,19 @@ let menuItems = [
                 title: 'Grayscale',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fvd-grayscale.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fvd-grayscale.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/61VIYvsGxstQU65lCIwTyx?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-grayscale.png'
             },
             {
@@ -3399,11 +4198,19 @@ let menuItems = [
                 title: 'Erwith',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-erwith.png',
+                species: 'Flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-erwith.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5uCO2B4m6lxjOoHOj38JfG?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-erwith.png'
             },
             {
@@ -3411,11 +4218,19 @@ let menuItems = [
                 title: 'Fyzer',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Florifyber',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fvd-fyzer.png',
+                species: 'Florifyber',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fvd-fyzer.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/18hIDsoOvx483ajC3dMLYW?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-fyzer.png'
             },
             {
@@ -3423,11 +4238,19 @@ let menuItems = [
                 title: 'Kloroforo',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Robot flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fvd-kloroforo.png',
+                species: 'Robot flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fvd-kloroforo.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6n3dbR0Cw3k6MYwGA2OgDJ?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fvd-kloroforo.png'
             }
         ]
@@ -3440,20 +4263,79 @@ let menuItems = [
         image: 'images/fve-i.png',
         color: 'var(--color-8)',
         hidden: true,
-        labels: [
+        cards: [
             {
                 cardId: 'fveInfo',
-                title: 'Info',
-                subtitle: 'Information about the Floriverse : Epsilon Album',
+                title: 'Album Information',
+                subtitle: 'Floriverse : Epsilon',
                 banner: true,
                 detail: `
                     Released: June 4th, 2025<br>
                     Total tracks: 48<br>
                     Total length: 2hr 36m<br>
-                    <a href="https://open.spotify.com/album/2qpLiyGRBhRHggKZSJUYbj?si=j0kxk_nfQ9u4bmv1iZmj3Q" target="_blank">Spotify album link</a><br>
+                    <br>
+                    <a href="https://open.spotify.com/album/2qpLiyGRBhRHggKZSJUYbj?si=j0kxk_nfQ9u4bmv1iZmj3Q" target="_blank">Spotify Album</a><br>
+                    <a href="https://artifyber.bandcamp.com/album/floriverse-epsilon" target="_blank">Bandcamp Release</a><br>
                     <h2>Album Cover:</h2><br>
                     <img src="images/fve-i.png" data-caption="Floriverse : Epsilon" data-subcaption="Album cover for Floriverse : Epsilon"><br>
                     `,
+                sections: [
+                    {
+                        title: 'Tracklist',
+                        detail: `
+                        <div class="container">
+                            ${internalCard({ href: "floriverse-epsilon:fveSolaris", banner: true, title: "1 - Hitzen", subtitle: "02:33" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveTrix", banner: true, title: "2 - touch grass", subtitle: "02:59" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveLux", banner: true, title: "3 - Borealis", subtitle: "03:10" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveGlitter", banner: true, title: "4 - Midnight Stargazing", subtitle: "04:03" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveFomfz", banner: true, title: "5 - Leaves", subtitle: "02:53" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveBion", banner: true, title: "6 - Vanished Horizons", subtitle: "02:35" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveZoey", banner: true, title: "7 - Spores II", subtitle: "02:54" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveHera", banner: true, title: "8 - Timeline", subtitle: "03:49" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveIsla", banner: true, title: "9 - Coconut", subtitle: "03:36" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveAzira", banner: true, title: "10 - Blueberry", subtitle: "03:04" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveMisty", banner: true, title: "11 - Catdelions III", subtitle: "03:37" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveNya", banner: true, title: "12 - Catdelions IV", subtitle: "04:00" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveAtto", banner: true, title: "13 - Catdelions V", subtitle: "03:19" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveClara", banner: true, title: "14 - Cottonbuns", subtitle: "02:53" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveLyra", banner: true, title: "15 - Cottonbuns II", subtitle: "04:07" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveStrawnilla", banner: true, title: "16 - Frozen Strawnilla Cream", subtitle: "02:32" })}
+                            ${internalCard({ href: "floriverse-epsilon:fvePoppers", banner: true, title: "17 - Vitamin Supplement Commercials", subtitle: "02:30" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveAurelia", banner: true, title: "18 - Weekend255", subtitle: "03:01" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveDysis", banner: true, title: "19 - Afternoon", subtitle: "02:50" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveButter", banner: true, title: "20 - Peanut Butter", subtitle: "02:35" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveBell", banner: true, title: "21 - Under The Mistletoe", subtitle: "02:45" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveNila", banner: true, title: "22 - Midnight Honey II", subtitle: "03:24" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveZest", banner: true, title: "23 - Zesty Lemonade", subtitle: "02:02" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveCorrode", banner: true, title: "24 - へへ", subtitle: "03:40" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveAmalgamapot", banner: true, title: "25 - Flashbackverse", subtitle: "02:21" })}
+                            ${internalCard({ href: "floriverse-epsilon:fvePosie", banner: true, title: "26 - Quintupetals", subtitle: "02:26" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveNonsense", banner: true, title: "27 - Nonsense Flower", subtitle: "04:03" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveTorq", banner: true, title: "28 - Mechanical Sprouts", subtitle: "03:22" })}
+                            ${internalCard({ href: "floriverse-epsilon:fvePersen", banner: true, title: "29 - =fract", subtitle: "03:26" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveTerentia", banner: true, title: "30 - Ruins", subtitle: "03:41" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveLumina", banner: true, title: "31 - Luciferin", subtitle: "03:02" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveTriplequestionmark", banner: true, title: "32 - questionmark", subtitle: "02:48" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveUpsidedowntriplequestionmark", banner: true, title: "33 - ε", subtitle: "02:49" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveGhoargh", banner: true, title: "34 - BCE", subtitle: "01:36" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveHYD124", banner: true, title: "35 - Kugelblitz", subtitle: "04:00" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveThorn", banner: true, title: "36 - Livid Life", subtitle: "03:38" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveReva", banner: true, title: "37 - Cactus Storm", subtitle: "03:30" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveAsh", banner: true, title: "38 - Extreme Painist", subtitle: "02:58" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveFlailer", banner: true, title: "39 - PLUCK", subtitle: "02:24" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveMang", banner: true, title: "40 - THOSE WHO GROW", subtitle: "03:12" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveZappie", banner: true, title: "41 - SWARM!!!", subtitle: "02:56" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveKai", banner: true, title: "42 - Opinions", subtitle: "03:05" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveConsole", banner: true, title: "43 - h", subtitle: "03:30" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveXi", banner: true, title: "44 - 11", subtitle: "08:50" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveFloriecookies", banner: true, title: "45 - cookie cutter", subtitle: "04:44" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveNini", banner: true, title: "46 - ニニ", subtitle: "03:02" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveXyxiv", banner: true, title: "47 - dddddddddddddddddddddddd", subtitle: "02:20" })}
+                            ${internalCard({ href: "floriverse-epsilon:fveNau", banner: true, title: "48 - sunrise SUNSET", subtitle: "03:07" })}
+                        </div>
+                        `
+                    }
+                ],
                 image: 'images/fve-i.png'
             },
             {
@@ -3461,11 +4343,19 @@ let menuItems = [
                 title: 'Solaris',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Fire flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-solaris.png',
+                species: 'Fire flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-solaris.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/24g0lFcsVNK02abD2QkNGV?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-solaris.png'
             },
             {
@@ -3473,11 +4363,19 @@ let menuItems = [
                 title: 'Trix',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Dandelion',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-trix.png',
+                species: 'Dandelion',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-trix.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4UEZLy5azpZDUXsSZ7kSd3?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-trix.png'
             },
             {
@@ -3485,11 +4383,19 @@ let menuItems = [
                 title: 'Lux',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Exotic flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-lux.png',
+                species: 'Exotic flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-lux.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6XQtpyrmZqOQ4vkryFebOd?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-lux.png'
             },
             {
@@ -3497,11 +4403,19 @@ let menuItems = [
                 title: 'Glitter',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-glitter.png',
+                species: 'Tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-glitter.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2XbQRw5LjZ0215KFoXygB5?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-glitter.png'
             },
             {
@@ -3509,11 +4423,19 @@ let menuItems = [
                 title: 'Fomfz',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tree',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-fomfz.png',
+                species: 'Tree',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-fomfz.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3FLUx25H8AdvUQaqRSUDpj?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-fomfz.png'
             },
             {
@@ -3521,11 +4443,19 @@ let menuItems = [
                 title: 'Bion',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Spirit flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-bion.png',
+                species: 'Spirit flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-bion.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5ttGzQwPCn0N1MvkY8gmPR?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-bion.png'
             },
             {
@@ -3533,11 +4463,25 @@ let menuItems = [
                 title: 'Zoey',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Mushroom',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-zoey.png',
+                species: 'Mushroom',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-zoey.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-delta:fvdTiram',
+                        relation: 'Sibling'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0HAWMtwV7i8h5meDcGvEsY?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-zoey.png'
             },
             {
@@ -3545,11 +4489,19 @@ let menuItems = [
                 title: 'Hera',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Goddess of time',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-hera.png',
+                species: 'Goddess of time',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-hera.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3ZSUH2r8pOG96MvybtzAA0?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-hera.png'
             },
             {
@@ -3557,11 +4509,19 @@ let menuItems = [
                 title: 'Isla',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Palm tree',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-isla.png',
+                species: 'Palm tree',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-isla.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2nD9OFVC0vSjzqQs6cdrjE?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-isla.png'
             },
             {
@@ -3569,11 +4529,19 @@ let menuItems = [
                 title: 'Azira',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Blueberry',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-azira.png',
+                species: 'Blueberry',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-azira.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0YSzGb5hP2mQjYNlEdnHYT?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-azira.png'
             },
             {
@@ -3583,21 +4551,29 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Catdelion',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/flories/fve-misty.png',
-                cGallery: [
+                species: 'Catdelion',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/flories/fve-misty.png',
+                gallery: [
                     'images/c/misty-c.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'floriverse-vanilla:fvvFurflow',
                         relation: 'Significant Other'
                     },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/54477floWI0ly0MSbqWPTi?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
                 ],
 
                 image: 'images/flories/fve-misty.png'
@@ -3607,11 +4583,19 @@ let menuItems = [
                 title: 'Nya',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Catdelion',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-nya.png',
+                species: 'Catdelion',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-nya.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6UoIaMC0x2Q28sgfmyE4Gw?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-nya.png'
             },
             {
@@ -3619,11 +4603,19 @@ let menuItems = [
                 title: 'Atto',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Catdelion',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-atto.png',
+                species: 'Catdelion',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-atto.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/54VLAiBP3zAezPuN4iTsVz?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-atto.png'
             },
             {
@@ -3631,11 +4623,25 @@ let menuItems = [
                 title: 'Clara',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cottonbun',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-clara.png',
+                species: 'Cottonbun',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-clara.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-epsilon:fveLyra',
+                        relation: 'Sibling'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/1Kvkl60fp0gCjZhVHLFyDd?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-clara.png'
             },
             {
@@ -3643,11 +4649,25 @@ let menuItems = [
                 title: 'Lyra',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cottonbun',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-lyra.png',
+                species: 'Cottonbun',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-lyra.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-epsilon:fveClara',
+                        relation: 'Sibling'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4IUh6x05XpQKvaVUIAQHSx?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-lyra.png'
             },
             {
@@ -3655,11 +4675,19 @@ let menuItems = [
                 title: 'Strawnilla',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Poptart berry',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-strawnilla.png',
+                species: 'Poptart berry',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-strawnilla.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5sbhfCavUipotACA6gTE6K?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-strawnilla.png'
             },
             {
@@ -3667,11 +4695,19 @@ let menuItems = [
                 title: 'Poppers',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Berries',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fve-poppers.png',
+                species: 'Berries',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fve-poppers.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6YCbIPAxhCXtfeyjCEsZZZ?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-poppers.png'
             },
             {
@@ -3681,21 +4717,22 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Zinnia',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/aurelia-r.png',
-                cGallery: [
+                species: 'Zinnia',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                flags: ['floriewlw'],
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/aurelia-r.png',
+                gallery: [
                     'images/flories/fve-aurelia.png',
                     'images/c/aurelia-c.png',
                     'images/c/aurelia-c2.png',
                     'images/c/aurelia-c3.png',
                     'images/c/aurelia-c4.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'deltadim-chromasia:hana',
                         relation: 'Significant Other'
@@ -3705,6 +4742,14 @@ let menuItems = [
                         relation: 'Older Sister'
                     },
                 ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3utG3VcCFG7wQWsQEM6NdV?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
 
                 image: 'images/flories/fve-aurelia.png'
             },
@@ -3713,16 +4758,24 @@ let menuItems = [
                 title: 'Dysis',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-dysis.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-dysis.png'],
                 detail: '',
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'floriverse-epsilon:fveAurelia',
                         relation: 'Younger Sister'
                     },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6CPjDuXknQCUUiUsPuVzsc?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
                 ],
                 image: 'images/flories/fve-dysis.png'
             },
@@ -3731,11 +4784,19 @@ let menuItems = [
                 title: 'Butter',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-butter.png',
+                species: 'Tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-butter.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6pyJodnFGPhOBP06KQYcAM?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-butter.png'
             },
             {
@@ -3743,11 +4804,19 @@ let menuItems = [
                 title: 'Bell',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Mistletoe',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-bell.png',
+                species: 'Mistletoe',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-bell.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0OKR8PyOmqjabP48YNFtaf?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-bell.png'
             },
             {
@@ -3755,11 +4824,25 @@ let menuItems = [
                 title: 'Nila',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Tulip',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-nila.png',
+                species: 'Tulip',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-nila.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-delta:fvdYana',
+                        relation: 'Significant Other'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/526q0c2QlCM4BBB8cuiZBl?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-nila.png'
             },
             {
@@ -3767,11 +4850,19 @@ let menuItems = [
                 title: 'Zest',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Lemon',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-zest.png',
+                species: 'Lemon',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-zest.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0WlPypkfkmPstkpnSV2jQ9?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-zest.png'
             },
             {
@@ -3779,11 +4870,25 @@ let menuItems = [
                 title: 'Corrode',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Charred tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-corrode.png',
+                species: 'Charred tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-corrode.png'],
                 detail: '',
+                relatives: [
+                    {
+                        cardId: 'floriverse-delta:fvdWina',
+                        relation: 'Cousin'
+                    },
+                ],
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6LUcAFz9TVoxWPeuaoDT7k?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-corrode.png'
             },
             {
@@ -3791,11 +4896,19 @@ let menuItems = [
                 title: 'Amalgamapot',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Amalgamation',
-                cPronouns: 'They',
-                cGender: 'Multi-florie',
-                cReference: 'images/flories/fve-amalgamapot.png',
+                species: 'Amalgamation',
+                pronouns: 'They',
+                gender: 'Multi-florie',
+                gallery: ['images/flories/fve-amalgamapot.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4Oq6HngWlSqv2zcoMpOof7?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-amalgamapot.png'
             },
             {
@@ -3803,11 +4916,19 @@ let menuItems = [
                 title: 'Posie',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Multi',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fve-posie.png',
+                species: 'Multi',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fve-posie.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0hbkLbvXqRjtPk5GpISMXX?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-posie.png'
             },
             {
@@ -3815,11 +4936,19 @@ let menuItems = [
                 title: 'Nonsense',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Shapeshifter',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/fve-nonsense.png',
+                species: 'Shapeshifter',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/fve-nonsense.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2X5FBlUAInQcPuk8z5Wkhc?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-nonsense.png'
             },
             {
@@ -3827,11 +4956,19 @@ let menuItems = [
                 title: 'Torq',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Mechanical flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-torq.png',
+                species: 'Mechanical flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-torq.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4dGOtceG8Uu4NlCpy5tYrz?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-torq.png'
             },
             {
@@ -3839,11 +4976,19 @@ let menuItems = [
                 title: 'Persen',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Exotic flower',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fve-persen.png',
+                species: 'Exotic flower',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fve-persen.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/01IdMK2geYxOVNOeWyOPOr?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-persen.png'
             },
             {
@@ -3851,11 +4996,19 @@ let menuItems = [
                 title: 'Terentia',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-terentia.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-terentia.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/02pDEIJ4SkOpS26x2iAWR4?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-terentia.png'
             },
             {
@@ -3863,11 +5016,19 @@ let menuItems = [
                 title: 'Lumina',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Aquatic mushroom',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/fve-lumina.png',
+                species: 'Aquatic mushroom',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/fve-lumina.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/39ibN3aXuIScvHvsqjTd0V?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-lumina.png'
             },
             {
@@ -3875,11 +5036,19 @@ let menuItems = [
                 title: '???',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Unknown Florie',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fve-triplequestionmark.png',
+                species: 'Unknown Florie',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fve-triplequestionmark.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/7BiS2zKOVhXohUXaWPUByc?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-triplequestionmark.png'
             },
             {
@@ -3887,11 +5056,19 @@ let menuItems = [
                 title: '¿¿¿',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Unknown Florie',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fve-upsidedowntriplequestionmark.png',
+                species: 'Unknown Florie',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fve-upsidedowntriplequestionmark.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/1eb68kB5ZKJOGFwANnZyXk?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-upsidedowntriplequestionmark.png'
             },
             {
@@ -3899,11 +5076,19 @@ let menuItems = [
                 title: 'Ghoargh',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Prehistoric plant',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-ghoargh.png',
+                species: 'Prehistoric plant',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-ghoargh.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5hj0JXlSNvViO6Kxqxj1hL?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-ghoargh.png'
             },
             {
@@ -3911,11 +5096,19 @@ let menuItems = [
                 title: 'HYD-124',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Black hole flower',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-hyd-124.png',
+                species: 'Black hole flower',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-hyd-124.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4ad4sRmfxHGtT49SZdaYqx?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-hyd-124.png'
             },
             {
@@ -3923,11 +5116,19 @@ let menuItems = [
                 title: 'Thorn',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Wilted rose',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-thorn.png',
+                species: 'Wilted rose',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-thorn.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/6jlzwHfY2mTdz5sSjxirlL?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-thorn.png'
             },
             {
@@ -3935,11 +5136,19 @@ let menuItems = [
                 title: 'Reva',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cactus',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-reva.png',
+                species: 'Cactus',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-reva.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/48Soa2UoSNi07SMvUgeNNP?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-reva.png'
             },
             {
@@ -3947,11 +5156,19 @@ let menuItems = [
                 title: 'Ash',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Burning flower',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/fve-ash.png',
+                species: 'Burning flower',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/fve-ash.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5LEJ2T6c55nc8IaAJAP2WQ?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-ash.png'
             },
             {
@@ -3959,11 +5176,19 @@ let menuItems = [
                 title: 'Flailer',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Femtanyl bootleg florie',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-flailer.png',
+                species: 'Femtanyl bootleg florie',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-flailer.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3oBsHcBbVNlAPSuw41P5xc?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-flailer.png'
             },
             {
@@ -3971,11 +5196,19 @@ let menuItems = [
                 title: 'Mang',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Potted mango tree',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-mang.png',
+                species: 'Potted mango tree',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-mang.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5Gom9yi4U8hH4MaQTe3LsB?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-mang.png'
             },
             {
@@ -3983,11 +5216,19 @@ let menuItems = [
                 title: 'Zappie',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Bee tulip',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cReference: 'images/flories/fve-zappie.png',
+                species: 'Bee tulip',
+                pronouns: 'He',
+                gender: 'Male',
+                gallery: ['images/flories/fve-zappie.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5ZB7QxBEav9OPcd1mAePtd?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-zappie.png'
             },
             {
@@ -3995,11 +5236,19 @@ let menuItems = [
                 title: 'Kai',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Clouds',
-                cPronouns: 'They',
-                cGender: 'Non-binary',
-                cReference: 'images/flories/fve-kai.png',
+                species: 'Clouds',
+                pronouns: 'They',
+                gender: 'Non-binary',
+                gallery: ['images/flories/fve-kai.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3eQgHNwZRXOVsDHR9HPTub?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-kai.png'
             },
             {
@@ -4007,11 +5256,19 @@ let menuItems = [
                 title: 'Console',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Robot bush',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fve-console.png',
+                species: 'Robot bush',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fve-console.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2Fh8PrGc0Vy6heXPciofqh?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-console.png'
             },
             {
@@ -4019,11 +5276,19 @@ let menuItems = [
                 title: 'Xi',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Angel',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fve-xi.png',
+                species: 'Angel',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fve-xi.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/4SiPzpaunU63s6bcZxs00O?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-xi.png'
             },
             {
@@ -4031,11 +5296,19 @@ let menuItems = [
                 title: 'Floriecookies',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Cookies',
-                cPronouns: 'They',
-                cGender: 'Unknown',
-                cReference: 'images/flories/fve-floriecookies.png',
+                species: 'Cookies',
+                pronouns: 'They',
+                gender: 'Unknown',
+                gallery: ['images/flories/fve-floriecookies.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/2VxAXrDKYocC8RLGnLNYEb?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-floriecookies.png'
             },
             {
@@ -4043,11 +5316,19 @@ let menuItems = [
                 title: 'Nini',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Mystical lemon',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-nini.png',
+                species: 'Mystical lemon',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-nini.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5JHVefGyTwHCywi6c5svUS?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-nini.png'
             },
             {
@@ -4055,11 +5336,19 @@ let menuItems = [
                 title: 'Xyxiv',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Angel',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cReference: 'images/flories/fve-xyxiv.png',
+                species: 'Angel',
+                pronouns: 'It',
+                gender: 'Genderless',
+                gallery: ['images/flories/fve-xyxiv.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3sdk7unVIWs5f8309C7jwa?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-xyxiv.png'
             },
             {
@@ -4067,11 +5356,19 @@ let menuItems = [
                 title: 'Nau',
                 subtitle: '',
                 isCharacter: true,
-                cSpecies: 'Flower',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cReference: 'images/flories/fve-nau.png',
+                species: 'Flower',
+                pronouns: 'She',
+                gender: 'Female',
+                gallery: ['images/flories/fve-nau.png'],
                 detail: '',
+                sections: [
+                    {
+                        title: 'Song',
+                        detail: `
+                            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/5xlRh2B4jXWwZsP2y1u64l?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        `
+                    }
+                ],
                 image: 'images/flories/fve-nau.png'
             }
         ]
@@ -4086,8 +5383,11 @@ let menuItems = [
         subtitle: 'Digital Realm',
         image: 'icons/digirel.png',
         color: 'var(--color-3)',
+        gridColor: 'var(--color-3)',
+        gridColor2: 'var(--accent2)',
+        gridOpacity: 0.1,
         orbit: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'info',
                 title: 'Info',
@@ -4106,14 +5406,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/ruby-r.png',
-                cGallery: [],
+                species: 'Rabbit',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/ruby-r.png',
+                gallery: [],
 
                 image: 'images/i/ruby-i.png',
             },
@@ -4124,14 +5424,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'They/Any',
-                cGender: 'Non-binary',
-                cSexuality: 'Asexual',
-                cNicknames: 'Foam',
-                cAddOns: '',
-                cReference: 'images/r/soap-r.png',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'They/Any',
+                gender: 'Non-binary',
+                sexuality: 'Asexual',
+                aliases: 'Foam',
+                extra: '',
+                refsheet: 'images/r/soap-r.png',
+                gallery: [
                     'images/c/soap-c.png',
                     'images/c/soap-c2.png',
                     'images/c/soap-c3.png',
@@ -4147,14 +5447,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Any Gender',
-                cSexuality: 'who cares bro',
-                cNicknames: 'CMYK, D43DK177Y.exe',
-                cAddOns: '',
-                cReference: 'images/r/semyk-r.png',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'Any Pronouns',
+                gender: 'Any Gender',
+                sexuality: 'who cares bro',
+                aliases: 'CMYK, D43DK177Y.exe',
+                extra: '',
+                refsheet: 'images/r/semyk-r.png',
+                gallery: [
                     'images/c/semyk-c.png',
                     'images/c/semyk-c2.png',
                     'images/c/semyk-c3.png',
@@ -4169,14 +5469,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Folder Bee',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Female',
-                cSexuality: 'Pansexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Folder Bee',
+                pronouns: 'Any Pronouns',
+                gender: 'Female',
+                sexuality: 'Pansexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artifolder-c.png',
                 ],
 
@@ -4189,14 +5489,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Folder Cat',
-                cPronouns: 'He/They',
-                cGender: 'Demiboy',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Folder Cat',
+                pronouns: 'He/They',
+                gender: 'Demiboy',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/byte-c.png',
                     'images/c/byte-c2.png',
                 ],
@@ -4210,14 +5510,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'She/They',
-                cGender: 'Demigirl',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'She/They',
+                gender: 'Demigirl',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/cherry-c.png',
                     'images/c/cherry-c2.png',
                 ],
@@ -4231,15 +5531,16 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Rabbit',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Rabbit',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/blurplebun-c.png',
+                    'images/i/blurplebun-i.png',
                 ],
 
                 image: 'images/i/blurplebun-i.png',
@@ -4251,14 +5552,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Slime Rabbit',
-                cPronouns: 'She/They/Any',
-                cGender: 'Pangender',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/ebta-r.png',
-                cGallery: [
+                species: 'Slime Rabbit',
+                pronouns: 'She/They/Any',
+                gender: 'Pangender',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/ebta-r.png',
+                gallery: [
                     'images/c/ebta-c.png',
                     'images/c/ebta-c2.png',
                 ],
@@ -4272,14 +5573,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'Any',
-                cGender: 'Genderless',
-                cSexuality: '',
-                cNicknames: 'Yeah!',
-                cAddOns: '',
-                cReference: 'images/r/furryeah-r.png',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'Any',
+                gender: 'Genderless',
+                sexuality: '',
+                aliases: 'Yeah!',
+                extra: '',
+                refsheet: 'images/r/furryeah-r.png',
+                gallery: [
                     'images/c/furryeah-c.png',
                     'images/c/furryeah-c2.png',
                 ],
@@ -4293,14 +5594,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cat',
-                cPronouns: 'Any Pronouns',
-                cGender: 'None',
-                cSexuality: 'None',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cat',
+                pronouns: 'Any Pronouns',
+                gender: 'None',
+                sexuality: 'None',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/placeholder-c.png',
                     'images/c/placeholder-c2.png',
                     'images/c/placeholder-c3.png',
@@ -4315,14 +5616,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Fennec',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Heterosexual',
-                cNicknames: '',
-                cAddOns: 'Adopted from <a href="https://x.com/Kaylaniakea" target="_blank">Kaylaniakea</a>',
-                cReference: '',
-                cGallery: [
+                species: 'Fennec',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Heterosexual',
+                characterAttrs: {
+                    "Design Origin": "<a href='https://x.com/Kaylaniakea' target='_blank'>Kaylaniakea</a>",
+                },
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/kay-c.png',
                 ],
 
@@ -4335,14 +5639,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'USB-Rabbit',
-                cPronouns: 'He/She',
-                cGender: 'Intersex',
-                cSexuality: 'Pansexual',
-                cNicknames: 'Universal Serial Bunny',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'USB-Rabbit',
+                pronouns: 'He/She',
+                gender: 'Intersex',
+                sexuality: 'Pansexual',
+                aliases: 'Universal Serial Bunny',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/usbun-c.png',
                 ],
 
@@ -4355,14 +5659,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Digitalia',
-                cPronouns: 'She/They',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Digitalia',
+                pronouns: 'She/They',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/sakura-c.png',
                 ],
 
@@ -4375,14 +5679,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Hologram Cat',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Pansexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/quanta-r.png',
-                cGallery: [
+                species: 'Hologram Cat',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                sexuality: 'Pansexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/quanta-r.png',
+                gallery: [
                     'images/c/quanta-c.png',
                 ],
 
@@ -4400,8 +5704,11 @@ let menuItems = [
         subtitle: 'World of Nonsense',
         image: 'icons/nansenz.png',
         color: 'var(--color-4)',
+        gridColor: 'var(--color-4)',
+        gridColor2: 'var(--accent2)',
+        gridOpacity: 0.1,
         orbit: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'info',
                 title: 'Info',
@@ -4426,14 +5733,20 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: '"Cabbit"',
-                cPronouns: 'She/Any',
-                cGender: 'Genderless',
-                cSexuality: 'Aroace',
-                cNicknames: 'μ',
-                cAddOns: '',
-                cReference: 'images/r/mu-r.png',
-                cGallery: [],
+                species: '"Cabbit"',
+                pronouns: 'She/Any',
+                gender: 'Genderless',
+                sexuality: 'Aroace',
+                aliases: 'μ',
+                extra: '',
+                refsheet: 'images/r/mu-r.png',
+                gallery: [],
+                relatives: [
+                    {
+                        cardId: 'floriverse-delta:fvdWina',
+                        relation: 'Multiversal Friend'
+                    },
+                ],
 
                 image: 'images/i/mu-i.png',
             },
@@ -4444,14 +5757,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cigarette',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cSexuality: 'Gay',
-                cNicknames: 'Cigarman, Cigar',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cigarette',
+                pronouns: 'He',
+                gender: 'Male',
+                sexuality: 'Gay',
+                aliases: 'Cigarman, Cigar',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/cancerman-c.png',
                 ],
 
@@ -4464,14 +5777,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Bacteria',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Non-binary',
-                cSexuality: 'Asexual',
-                cNicknames: 'Phelix',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Bacteria',
+                pronouns: 'Any Pronouns',
+                gender: 'Non-binary',
+                sexuality: 'Asexual',
+                aliases: 'Phelix',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/furrophelix-c.png',
                 ],
 
@@ -4484,14 +5797,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Polygons',
-                cPronouns: 'It',
-                cGender: 'Genderless',
-                cSexuality: 'Aroace',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Polygons',
+                pronouns: 'It',
+                gender: 'Genderless',
+                sexuality: 'Aroace',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/malit-c.png',
                 ],
 
@@ -4504,14 +5817,15 @@ let menuItems = [
                 detail: ``,
 
                 isCharacter: true,
-                cSpecies: '',
-                cPronouns: '',
-                cGender: '',
-                cSexuality: '',
-                cNicknames: '',
-                cAddOns: `<H1 style="font-size:50px; font-family: Times, serif; color: #e1b89c; text-align: center;">THE GÖMBÖC SIMPLY WANTS MORE.</H1>`,
-                cReference: '',
-                cGallery: [],
+                species: '',
+                pronouns: '',
+                gender: '',
+                sexuality: '',
+                aliases: '',
+                extra: ` `,
+                html: `<H1 style="font-size:50px; font-family: Times, serif; color: #e1b89c; text-align: center;">THE GÖMBÖC SIMPLY WANTS MORE.</H1>`,
+                refsheet: '',
+                gallery: [],
 
                 image: 'images/gomboc.gif',
             },
@@ -4526,7 +5840,7 @@ let menuItems = [
         orbit: 1,
         hidden: true,
         parent: 'nansenz',
-        labels: [
+        cards: [
             {
                 cardId: 'article',
                 title: 'Article',
@@ -4534,14 +5848,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Article (Object)',
-                cPronouns: 'She/He/It',
-                cGender: 'Non-binary',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Article (Object)',
+                pronouns: 'She/He/It',
+                gender: 'Non-binary',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/article-c.png',
                 ],
 
@@ -4554,18 +5868,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Macaroon (Object)',
-                cPronouns: 'She/It',
-                cGender: 'Female',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Macaroon (Object)',
+                pronouns: 'She/It',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/meowcaroon-c.png',
                     'images/c/meowcaroon-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'nansenz-thingamaland:oworeo',
                         relation: 'Significant Other'
@@ -4581,18 +5895,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Sandwich Cookie (Object)',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Lesbian',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Sandwich Cookie (Object)',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/oworeo-c.png',
                     'images/c/oworeo-c2.png',
                 ],
-                cRelations: [
+                relatives: [
                     {
                         cardId: 'nansenz-thingamaland:meowcaroon',
                         relation: 'Significant Other'
@@ -4608,14 +5922,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Tree (Object)',
-                cPronouns: 'Any Pronouns',
-                cGender: 'Male',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/treehee-r.png',
-                cGallery: [],
+                species: 'Tree (Object)',
+                pronouns: 'Any Pronouns',
+                gender: 'Male',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/treehee-r.png',
+                gallery: [],
 
                 image: 'images/i/treehee-i.png',
             },
@@ -4626,14 +5940,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Excavator',
-                cPronouns: 'He (Bucket), They (Cabin)',
-                cGender: 'Male (Bucket), Non-binary (Cabin)',
-                cSexuality: 'Asexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Excavator',
+                pronouns: 'He (Bucket), They (Cabin)',
+                gender: 'Male (Bucket), Non-binary (Cabin)',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/rexav-c.png',
                 ],
 
@@ -4646,14 +5960,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Curse Word (Object)',
-                cPronouns: 'He/It',
-                cGender: 'Male',
-                cSexuality: 'Pansexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Curse Word (Object)',
+                pronouns: 'He/It',
+                gender: 'Male',
+                sexuality: 'Pansexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/censored-c.png',
                 ],
 
@@ -4670,8 +5984,11 @@ let menuItems = [
         subtitle: 'Hi-Zenith',
         image: 'icons/hizen.png',
         color: 'var(--color-5)',
+        gridColor: 'var(--color-5)',
+        gridColor2: 'var(--accent2)',
+        gridOpacity: 0.1,
         orbit: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'info',
                 title: 'Info',
@@ -4690,16 +6007,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cloud Rabbit',
-                cPronouns: 'She',
-                cGender: 'Female',
-                cSexuality: 'Aroace',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Cloud Rabbit',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Aroace',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/nim-c.png',
                     'images/c/nim-c2.png',
+                    'images/c/nim-c3.png',
                 ],
 
                 image: 'images/i/nim-i.png',
@@ -4711,15 +6029,21 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Moth',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Arti, Mothy',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/artimoth-c.png'
+                species: 'Moth',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Bisexual',
+                aliases: 'Arti, Mothy',
+                characterAttrs: {
+                    'Realm Origin': '<a data-open-card="deltadim">Deltadim</a>',
+                },
+                extra: '',
+                refsheet: '',
+                gallery: [
+                    'images/c/artimoth-c2.png',
+                    'images/c/artimoth-c.png',
+                    'images/c/artimoth-c3.png',
+                    'images/c/artimoth-c4.png',
                 ],
 
                 image: 'images/i/artimoth-i.png',
@@ -4731,14 +6055,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Cloud Puppy',
-                cPronouns: 'He/They',
-                cGender: 'Male',
-                cSexuality: 'Gay',
-                cNicknames: '',
-                cAddOns: 'Adopted from <a href="https://x.com/yewm3w" target="_blank">yewm3w</a>',
-                cReference: '',
-                cGallery: [
+                species: 'Cloud Puppy',
+                pronouns: 'He/They',
+                gender: 'Male',
+                sexuality: 'Gay',
+                aliases: '',
+                characterAttrs: {
+                    'Realm Origin': '<a data-open-card="nansenz">Nansenz</a>',
+                    'Design Origin': '<a href="https://x.com/yewm3w" target="_blank">yewm3w</a>',
+                },
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/awan-c.png',
                     'images/c/awan-c2.png',
                 ],
@@ -4752,15 +6080,16 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Polygon',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Polyne',
-                cAddOns: '',
-                cReference: 'images/r/lyne-r.png',
-                cGallery: [
+                species: 'Polygon',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                sexuality: 'Bisexual',
+                aliases: 'Polyne',
+                extra: '',
+                refsheet: 'images/r/lyne-r.png',
+                gallery: [
                     'images/c/lyne-c.png',
+                    'images/c/lyne-c2.png',
                 ],
 
                 image: 'images/i/lyne-i.png',
@@ -4772,14 +6101,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Polygon',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Pansexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Polygon',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                sexuality: 'Pansexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/cupid-c.png',
                 ],
 
@@ -4792,18 +6121,45 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Polygon',
-                cPronouns: 'They',
-                cGender: 'Non-Binary',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
+                species: 'Polygon',
+                pronouns: 'They',
+                gender: 'Non-Binary',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/kasi-c.png',
                 ],
 
                 image: 'images/i/kasi-i.png',
+            },
+            {
+                cardId: 'amari',
+                title: 'Amari',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Goat',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                characterAttrs: {
+                    'Realm Origin': '<a data-open-card="deltadim">Deltadim</a>',
+                },
+                relatives: [
+                    {
+                        cardId: 'deltadim-teksui:artigoat',
+                        relation: 'Brother'
+                    }
+                ],
+                extra: '',
+                refsheet: 'images/r/amari-r.png',
+                gallery: [],
+
+                image: 'images/i/amari-i.png',
             },
         ]
     },
@@ -4817,8 +6173,11 @@ let menuItems = [
         subtitle: 'Void of Nadir',
         image: 'icons/nadir.png',
         color: 'var(--color-6)',
+        gridColor: 'var(--color-6)',
+        gridColor2: 'var(--accent2)',
+        gridOpacity: 0.1,
         orbit: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'info',
                 title: 'Info',
@@ -4837,22 +6196,18 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Unknown',
-                cPronouns: 'She/It',
-                cGender: 'Female',
-                cSexuality: 'Bisexual',
-                cNicknames: 'Nihil',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/artinihil-c.png',
+                species: 'Unknown',
+                pronouns: 'She/It',
+                gender: 'Female',
+                sexuality: 'Bisexual',
+                aliases: 'Nihil',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/artinihil-c2.png',
+                    'images/c/artinihil-c.png',
                 ],
-                cRelations: [
-                    {
-                        cardId: 'nadir:ugo',
-                        relation: 'Significant Other'
-                    },
+                relatives: [
                 ],
 
                 image: 'images/i/artinihil-i.png',
@@ -4864,14 +6219,14 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Infinity Symbol',
-                cPronouns: 'He/Any',
-                cGender: 'None',
-                cSexuality: 'None',
-                cNicknames: '∞',
-                cAddOns: '',
-                cReference: 'images/r/infineko-r.png',
-                cGallery: [],
+                species: 'Infinity Symbol',
+                pronouns: 'He/Any',
+                gender: 'None',
+                sexuality: 'None',
+                aliases: '∞',
+                extra: '',
+                refsheet: 'images/r/infineko-r.png',
+                gallery: [],
 
                 image: 'images/i/infineko-i.png',
             },
@@ -4882,19 +6237,15 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: 'Vortex',
-                cPronouns: 'He',
-                cGender: 'Male',
-                cSexuality: 'Gay',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: 'images/r/ugo-r.png',
-                cGallery: [],
-                cRelations: [
-                    {
-                        cardId: 'nadir:artinihil',
-                        relation: 'Significant Other'
-                    },
+                species: 'Vortex',
+                pronouns: 'He',
+                gender: 'Male',
+                sexuality: 'Gay',
+                aliases: '',
+                extra: '',
+                refsheet: 'images/r/ugo-r.png',
+                gallery: [],
+                relatives: [
                 ],
 
                 image: 'images/i/ugo-i.png',
@@ -4906,16 +6257,17 @@ let menuItems = [
                 detail: '',
 
                 isCharacter: true,
-                cSpecies: '???',
-                cPronouns: '???',
-                cGender: '???',
-                cSexuality: '???',
-                cNicknames: '',
-                cAddOns: '',
-                cReference: '',
-                cGallery: [
-                    'images/c/Δ-c.png',
+                species: '???',
+                pronouns: '???',
+                gender: '???',
+                sexuality: '???',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [
                     'images/c/Δ-c2.png',
+                    'images/c/Δ-c.png',
+                    'images/c/Δ-c3.png',
                 ],
 
                 image: 'images/i/Δ-i.png',
@@ -4923,7 +6275,8 @@ let menuItems = [
         ]
     },
 
-    // Orbit 3
+
+
     {
         title: 'Daily Art+',
         showTitle: true,
@@ -4933,28 +6286,25 @@ let menuItems = [
         color: 'var(--color-8)',
         orbit: 3,
         scale: 1.5,
-        labels: [
-            {
-                cardId: 'dailyartplus',
-                title: 'Daily Art+',
-                subtitle: '',
-                detail:
-                    `
-                    Showing latest posts from my Instagram.<br><br>
-                    <div id="instaCard">
-                        <iframe
-                            src="https://cdn.lightwidget.com/widgets/ce1b2c5863eb58798710d296e980a26c.html"
-                            scrolling="no"
-                            allowtransparency="true"
-                            class="lightwidget-widget"
-                            style="width:100%;border:0;overflow:hidden;">
-                        </iframe>
-                    </div>
-                    `,
-                image: 'icons/l-instagram.png'
-            },
-        ]
+        html:
+            `
+            <div id=snapshotViewer></div>
+            <!--
+            <div id="instaCard">
+                <iframe
+                    src="https://cdn.lightwidget.com/widgets/ce1b2c5863eb58798710d296e980a26c.html"
+                    scrolling="no"
+                    allowtransparency="true"
+                    class="lightwidget-widget"
+                    style="width:100%;border:0;overflow:hidden;">
+                </iframe>
+            </div>
+            -->
+            `,
+        noMargin: true,
     },
+
+
     {
         title: 'Converters',
         showTitle: true,
@@ -4964,14 +6314,15 @@ let menuItems = [
         color: 'var(--color-13)',
         orbit: 3,
         scale: 1.5,
-        labels: [
+        cards: [
             {
                 cardId: 'genotheta',
                 title: 'Genotheta',
                 subtitle: 'Convert Latin to Genotheta',
+                semibanner: true,
                 detail:
                     `
-                    <a href="https://jonaykon.github.io/fyberverse/fonts/GENOTHETAEX.ttf" target="_blank">Download Genotheta Font</a><br>
+                    <a href="https://artifyber.xyz/fonts/GENOTHETAEX.ttf" target="_blank">Download Genotheta Font</a><br>
                     <h2>Latin to Genotheta</h2>
                     Latin input
                     <div style="margin-top:10px;">
@@ -5068,9 +6419,10 @@ let menuItems = [
                 cardId: 'starstroke',
                 title: 'Starstroke',
                 subtitle: 'Convert Latin to Starstroke',
+                semibanner: true,
                 detail:
                     `
-                    <a href="https://jonaykon.github.io/fyberverse/fonts/starstroke.ttf" target="_blank">Download Starstroke Font</a><br><br>
+                    <a href="https://artifyber.xyz/fonts/starstroke.ttf" target="_blank">Download Starstroke Font</a><br><br>
                     <h2>Latin to Starstroke</h2>
                     Latin input
                     <div style="margin-top:10px;">
@@ -5133,9 +6485,10 @@ let menuItems = [
                 cardId: 'nadirune',
                 title: 'NADIRUNE',
                 subtitle: 'Convert Latin to NADIRUNE',
+                semibanner: true,
                 detail:
                     `
-                    <a href="https://jonaykon.github.io/fyberverse/fonts/NADIRUNE.ttf" target="_blank">Download NADIRUNE Font</a><br><br>
+                    <a href="https://artifyber.xyz/fonts/NADIRUNE.ttf" target="_blank">Download NADIRUNE Font</a><br><br>
                     <h2>Latin to NADIRUNE</h2>
                     Latin input
                     <div style="margin-top:10px;">
@@ -5198,9 +6551,10 @@ let menuItems = [
                 cardId: 'zenpen',
                 title: 'Zenpen',
                 subtitle: 'Convert Latin to Zenpen',
+                semibanner: true,
                 detail:
                     `
-                    <a href="https://jonaykon.github.io/fyberverse/fonts/zenpen.ttf" target="_blank">Download Zenpen Font</a><br><br>
+                    <a href="https://artifyber.xyz/fonts/zenpen.ttf" target="_blank">Download Zenpen Font</a><br><br>
                     <h2>Latin to Zenpen</h2>
                     Latin input
                     <div style="margin-top:10px;">
@@ -5271,92 +6625,7 @@ let menuItems = [
                     `,
                 image: 'icons/zenpen.png'
             },
-            {
-                cardId: 'squaracters',
-                title: 'Squaracters',
-                subtitle: 'Convert Latin to Squaracters',
-                detail:
-                    `
-                    <a href="https://fontstruct.com/fontstructions/show/2768650/squaracters" target="_blank">Download Squaracters Font</a><br><br>
-                    <h2>Latin to Squaracters</h2>
-                    Latin input
-                    <div style="margin-top:10px;">
-                        <textarea id="squaractersInput" rows="4" style="width:100%;"></textarea>
-                    </div>
-                    <br>
-                    Squaracters output
-                    <div style="margin-top:10px;">
-                        <textarea id="squaractersOutput" rows="4" style="width:100%;" readonly></textarea>
-                    </div>
-
-                    <br><br><hr>
-                    
-                    <h2>Squaracters to Latin</h2>
-                    Squaracters input
-                    <div style="margin-top:10px;">
-                        <textarea id="squaractersInputRev" class="squaracters" rows="2" style="width:100%;" readonly></textarea>
-                    </div>
-                    <br>
-                    <button id="copySquaractersRevBtn" type="button">Copy</button> -  latin output<br>
-                    <div style="margin-top:10px;">
-                        <textarea id="squaractersOutputRev" rows="2" style="width:100%;" readonly></textarea>
-                    </div>
-                    <br>
-                    <div class="keyboardLayout" style="margin-top:10px;">
-                        <button type="button" class="keycap squaractersKeys" data-key="DEL">DEL</button>
-                        <button type="button" class="keycap squaractersKeys" data-key="CLR">CLR</button>
-                        <button type="button" class="keycap squaractersKeys" data-key=" ">SPACE</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="A">A</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="B">B</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="C">C</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="D">D</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="E">E</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="F">F</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="G">G</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="H">H</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="I">I</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="J">J</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="K">K</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="L">L</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="M">M</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="N">N</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="O">O</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="P">P</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="Q">Q</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="R">R</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="S">S</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="T">T</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="U">U</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="V">V</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="W">W</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="X">X</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="Y">Y</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="Z">Z</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="0">0</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="1">1</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="2">2</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="3">3</button>
-                        <button type="button" class="keycap squaracters squaractersKeys" data-key="4">4</button>
-                    </div>
-                    `,
-                image: 'icons/squaracters.png'
-            },
         ]
-    },
-    {
-        title: 'Random Character',
-        menuId: 'random',
-        showTitle: true,
-        image: 'icons/oc-random.png',
-        color: 'var(--color-12)',
-        orbit: 3,
-        scale: 1.5,
-        invisible: true,
-        labels: [
-            {
-                cardId: 'random',
-            }
-        ],
     },
 
     // Orbit 4
@@ -5368,48 +6637,63 @@ let menuItems = [
         showTitle: true,
         image: 'icons/info.png',
         color: 'var(--color-3)',
+        gridColor: 'var(--bg)',
+        gridColor2: 'var(--accent3)',
+        gridOpacity: 0.9,
         orbit: 4,
         scale: 1.5,
-        labels: [
+        html: `
+            <h1>Welcome!</h1>
+            Click an item to view its content
+            <hr>
+        `,
+        cards: [
             {
                 cardId: 'artifyber',
                 title: 'Artifyber',
                 subtitle: 'artifyber@gmail.com',
-                cAddOns: ``,
+                semibanner: true,
+                extra: ``,
                 detail: `
-                    <h2>Hello!</h2> I'm Artifyber, a furry artist who likes to draw and make music.
-                    <hr>
+                    <h2>Hello!</h2>
+                    I'm Artifyber, a furry artist who likes to draw and make music.<br>
+                    <br>`,
+                html: `
                     I taught myself how to draw since 2021 and produce music for even longer since 2019. Only in the late 2021 did I start to appear online.<br>
-                    <br>I started my first daily art challenge on January 1st, 2023. It wasn't called Daily Art+ back then. No significant worldbuilding or lore, just a challenge to develop a consistent art style. I succeeded and I kept going. At halfway through the year I rebranded to Artifyber and started developing a little bit of lore and worldbuilding. I also released my first album "Floriverse" around that time.<br>
                     <br>
-                    <hr>
+                    I started my first daily art challenge on January 1st, 2023. It wasn't called Daily Art+ back then. No significant worldbuilding or lore, just a challenge to develop a consistent art style. I succeeded and I kept going. At halfway through the year I rebranded to Artifyber and started developing a little bit of lore and worldbuilding. I also released my first album "Floriverse" around that time.<br>
+                    <br>
                     A year passed, and I'm now continuing my art hobby with the Daily Art+ series starting 2024. Drawing is the main activity I spent online the most. I mainly draw my own furry characters, but I also take art commissions from time to time. I quite enjoy drawing my own characters as I find it rather relaxing.<br>
                     <br>
                     Music production is also my hobby. Some say i have a diverse taste in music with the amount of genres i've produced. Honestly, i don't even know what kind of genre i'm making half of the time. I just throw 'n' slice samples and draw melodies and if it sounds good, then it's good. Even if it sounds unusual to a majority.<br>
                     <br>
                     In the future I want to be a game developer and create something out of the worlds and characters i've made. It's a dream of mine to create an actual game and I still have a long way to go.<br>
                     <br>
-                    <hr>
-                    All done. Thank you for enjoying what I make :3<br>
-                    <br>
-                    <img src="images/fyberhappy.png"">`,
+                    Thank you for enjoying what I make :]<br>
+                `,
                 isCharacter: true,
-                cSpecies: 'Fyber',
-                cPronouns: 'She/Any',
-                cGender: 'Bigender',
-                cSexuality: 'Bisexual',
-                cNicknames: '',
-                cReference: 'images/r/artifyber-r.png',
-                cGallery: [],
+                species: 'Fyber',
+                pronouns: 'She/Any',
+                gender: 'Bigender',
+                sexuality: 'Bisexual',
+                flags: ['aromantic'],
+                aliases: '',
+                refsheet: 'images/r/artifyber-r.png',
+                gallery: [
+                    "images/fyberhappy.png",
+                    "images/c/artifyber-c.png",
+                    "images/c/artifyber-c2.png",
+                ],
                 image: 'images/temp3.png'
             },
             {
                 cardId: 'ocrules',
                 title: 'Character Rules',
                 subtitle: `Rules regarding Artifyber's characters`,
+                semibanner: true,
                 detail:
                     `
-                    Last updated: November 12th, 2025<br>
+                    Last updated: May 7th, 2026<br>
                     Feel free to reach out to me for anything else not listed.
                     <h2>Fanart Policy</h2>
                     <h4>Allowed:</h4>
@@ -5436,14 +6720,12 @@ let menuItems = [
                         <br>
                         Adult contents will not be reposted or boosted to my profile. Do not tag me when you post your adult content. Although, feel free to notify me privately.
                         <ul>
-                            <li>Do not draw my characters paired with your own character in NSFW settings</li><br>
+                            <li>Do not draw my characters paired with your own character in NSFW settings unless i explicitly give permission to</li><br>
                             <li>Do not draw fetish art of my characters</li><br>
-                            <li>Do not draw my characters with exotic / animal-like genitalia<br>
-                                <small>There are a few exceptions to this with aquatic characters and flories. Please ask me beforehand</small></li><br>
                             <li>Do not create adult content out of these characters:</li><br>
                             <ul>
                                 <li>Artineko, Artimouse, Articani, Singularikitty, Gamma, Sukie</li><br>
-                                <li>Everything from <a data-open-card="hizen">Hizen</a></li><br>
+                                <li>Polygon species from <a data-open-card="hizen">Hizen</a></li><br>
                             </ul>
                     </details>
                     <hr>
@@ -5456,6 +6738,10 @@ let menuItems = [
                     </ul>
                     `,
                 image: 'icons/oc-rules.png'
+            },
+            {
+                linkId: 'links',
+                banner: true
             },
         ]
     },
@@ -5470,7 +6756,7 @@ let menuItems = [
         color: 'var(--color-9)',
         orbit: 5,
         scale: 1,
-        labels: [
+        cards: [
             {
                 cardId: 'twitter',
                 title: 'Twitter',
@@ -5537,7 +6823,7 @@ let menuItems = [
             {
                 cardId: 'carrd',
                 title: 'Carrd',
-                subtitle: 'Backup website just in case',
+                subtitle: 'Old website used for commission purpose',
                 url: 'https://artifyber.carrd.co/',
                 image: 'icons/l-carrd.png'
             },
@@ -5547,13 +6833,6 @@ let menuItems = [
                 subtitle: '',
                 url: 'https://toyhou.se/artifyber',
                 image: 'icons/l-toyhouse.png'
-            },
-            {
-                cardId: 'kofi',
-                title: 'Ko-Fi',
-                subtitle: '',
-                url: 'https://ko-fi.com/artifyber',
-                image: 'icons/comm-kofi.png'
             },
             {
                 cardId: 'alts',
@@ -5590,8 +6869,8 @@ let menuItems = [
         color: 'var(--color-11)',
         orbit: 4,
         scale: 1.5,
-        hidden: false,
-        labels: [
+        hidden: true,
+        cards: [
             {
                 cardId: 'kofi',
                 title: 'Ko-Fi',
@@ -5668,7 +6947,7 @@ let menuItems = [
                     <hr>
                     <h2>Full-body</h2>
                     70 USD per character<br>
-                    <div class="imgContainer">
+                    <div class="container">
                     <img src="images/comms/cfb-1.png"><br>
                     <img src="images/comms/cfb-2.png"><br>
                     <img src="images/comms/cfb-3.png"><br>
@@ -5679,7 +6958,7 @@ let menuItems = [
                     <hr>
                     <h2>Thigh-up</h2>
                     50 USD per character<br>
-                    <div class="imgContainer">
+                    <div class="container">
                     <img src="images/comms/ctu-1.png"><br>
                     <img src="images/comms/ctu-2.png"><br>
                     <img src="images/comms/ctu-3.png"><br>
@@ -5690,7 +6969,7 @@ let menuItems = [
                     <hr>
                     <h2>Icon</h2>
                     30 USD per character<br>
-                    <div class="imgContainer">
+                    <div class="container">
                     <img src="images/comms/ci-1.png"><br>
                     <img src="images/comms/ci-2.png"><br>
                     <img src="images/comms/ci-3.png"><br>
@@ -5709,7 +6988,7 @@ let menuItems = [
                         <li>Free if included with character commission</li><br>
                         <li>10 USD if requested separately</li>
                     </ul>
-                    <div class="imgContainer">
+                    <div class="container">
                     <img src="images/c/artibun-c2.png"><br>
                     <img src="images/c/artigoat-c4.png"><br>
                     <img src="images/c/micro-c.png"><br>
@@ -5720,7 +6999,7 @@ let menuItems = [
                         <li>+10 USD with character commission</li><br>
                         <li>15 USD if requested separately</li>
                     </ul>
-                    <div class="imgContainer">
+                    <div class="container">
                     <img src="images/c/artigoat-c2.png"><br>
                     <img src="images/c/skitty-c3.png"><br>
                     <img src="images/c/furfy-c.png"><br>
@@ -5731,7 +7010,7 @@ let menuItems = [
                         <li>+30 USD with character commission</li><br>
                         <li>40 USD if requested separately</li>
                     </ul>
-                    <div class="imgContainer">
+                    <div class="container">
                     <img src="images/c/artifox-c4.png"><br>
                     <img src="images/c/eros-c2.png"><br>
                     <img src="images/c/articat-c5.png"><br>
@@ -5772,6 +7051,22 @@ let menuItems = [
 
 
     {
+        // Random
+        title: 'Random Character',
+        menuId: 'random',
+        showTitle: true,
+        image: 'icons/oc-random.png',
+        color: 'var(--color-12)',
+        orbit: 3,
+        scale: 1.5,
+        invisible: true,
+        cards: [
+            {
+                cardId: 'random',
+            }
+        ],
+    },
+    {
         // Settings
         menuId: 'settings',
         title: 'Settings',
@@ -5782,15 +7077,17 @@ let menuItems = [
         scale: 1.5,
         hidden: true,
         invisible: true,
-        labels: [
+        cards: [
             {
                 cardId: 'audioSettings',
                 title: `Audio`,
                 subtitle: `
+                        <br>
                         <button type="button" id="toggleSFX">SFX: Off</button><br>
                         <button type="button" id="toggleMusic">Enable Music</button>
                 `,
                 unclickable: true,
+                semibanner: true,
                 detail:
                     ``,
                 image: ''
@@ -5799,9 +7096,11 @@ let menuItems = [
                 cardId: 'modeSwitch',
                 title: `Layout`,
                 subtitle: `
+                        <br>
                         <button type="button" id="modeSwitch">Switch Layout</button>
                 `,
                 unclickable: true,
+                semibanner: true,
                 detail:
                     ``,
                 image: ''
@@ -5810,31 +7109,32 @@ let menuItems = [
                 cardId: 'keybinds',
                 title: `Keyboard Shortcut`,
                 subtitle: `
+                        <br>
                         ESC = Go back<br>
                         SPACE = Open search<br>
                         C = Center view<br>
                 `,
                 unclickable: true,
+                semibanner: true,
                 detail:
                     ``,
                 image: ''
             },
             {
-                title: 'Developer Section',
-            },
-            {
                 cardId: 'webinfo',
                 title: `Website Info`,
                 subtitle: `
-                        Based on version: ${version}<br>
+                        <br>
+                        Updated: ${lastUpdated}<br>
+                        Version: ${version}<br>
                         <br>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalCardsCounter"></div>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalMenusCounter"></div>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalCharacterCounter"></div>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalSplashCounter"></div>
                 `,
-                banner: true,
                 unclickable: true,
+                semibanner: true,
                 detail:
                     ``,
                 image: ''
@@ -5843,21 +7143,21 @@ let menuItems = [
                 cardId: 'credits',
                 title: `Credits`,
                 subtitle: `
-                    Created by:<br>
-                    Artifyber<br>
-                    <br>
-                    Forked by:<br>
-                    Jonaykon<br>
-                    <br>
-                    <a href="https://fontstruct.com/fontstructions/show/2768650/squaracters">Squaracters font</a>:<br>
-                    Made by: <a href="https://fontstruct.com/fontstructors/2329103/maxy-dev">maxy_dev</a><br>
-                    Licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>
+                        <br>
+                        Developed by:<br>
+                        Artifyber<br>
+                        <br>
+                        Special thanks:<br>
+                        Azka "Artist" Zavian
                 `,
-                banner: true,
                 unclickable: true,
+                banner: true,
                 detail:
                     ``,
                 image: ''
+            },
+            {
+                title: 'Developer Section',
             },
             {
                 linkId: 'menuTemplate',
@@ -5873,35 +7173,35 @@ let menuItems = [
         subtitle: '',
         image: '',
         color: 'var(--color-10)',
-        orbit: 10,
+        orbit: 127,
         scale: 0.5,
         invisible: true,
-        labels: [
+        cards: [
             {
-                id: 1,
                 cardId: 'blank',
                 title: ' ',
                 subtitle: '',
                 detail:
                     ``,
-                image: 'icons/whitespace.png'
+                image: 'icons/whitespace.png',
             },
         ]
     },
 ];
 
 // Beecat
-if (Math.floor(Math.random() * 1) == 0) {
+if (Math.floor(Math.random() * 333) == 0) {
     menuItems.forEach(menu => {
-        if (menu.title == "Information") {
-            menu.labels.unshift({
+        if (menu.menuId == "info") {
+            menu.cards.push({
                 cardId: 'beecat',
-                title: 'Beecat',
+                title: 'Beecat!?',
                 subtitle: 'Beecat',
                 detail: `It's a bee!<br>It's a cat!<br>It's a beecat!<br>And it's spinning!<br>But why is it spinning?<br><br>
                 Character by <a href="https://x.com/ZestyLemonss" target="_blank">ZestyLemonss</a><br><br>
                 <img src="images/beecatspin.gif" data-caption="Beecat" data-subcaption="beecatspin.gif" style="width: 100%">`,
-                image: 'images/beecatspin.gif'
+                image: 'images/beecatspin.gif',
+                banner: true
             });
         }
     });
@@ -5915,7 +7215,7 @@ if (Math.floor(Math.random() * 1) == 0) {
  * @param {string} prefix - Prefix for card titles
  * @returns {Array} Array of placeholder card objects
  */
-function generateLabels(n, prefix) {
+function generateCards(n, prefix) {
     return Array.from({ length: n }).map((_, i) => ({
         id: i + 1,
         title: `${prefix} Item ${i + 1}`,
@@ -5973,11 +7273,929 @@ specialSearch = [
     },
 ];
 
+
+const snapshots = [
+    {
+        num: 274,
+        title: "Quick Articat drawing",
+        embed: "images/snapshots/274.png"
+    },
+    {
+        num: 273,
+        title: "Articuber",
+        embed: "images/snapshots/273.png"
+    },
+    {
+        num: 272,
+        title: "Earmuffs",
+        embed: "images/snapshots/272.png"
+    },
+    {
+        num: 271,
+        title: "Warmers",
+        embed: "images/snapshots/271.png"
+    },
+    {
+        num: 270,
+        title: "Kitty cookie",
+        embed: "images/snapshots/270.png"
+    },
+    {
+        num: 269,
+        title: "Cardboard bun",
+        embed: "images/snapshots/269.png"
+    },
+    {
+        num: 268,
+        title: "PATPATPATPATPATPATPAT",
+        embed: "images/snapshots/268.png"
+    },
+    {
+        num: 267,
+        title: "Apple fritters",
+        embed: "images/snapshots/267.png"
+    },
+    {
+        num: 266,
+        title: "Solitude",
+        embed: "images/snapshots/266.png"
+    },
+    {
+        num: 265,
+        title: "Paw gloves",
+        embed: "images/snapshots/265.png"
+    },
+    {
+        num: 264,
+        title: "📱",
+        embed: "images/snapshots/264.png"
+    },
+    {
+        num: 263,
+        title: "emoticons",
+        embed: "images/snapshots/263.mp4"
+    },
+    {
+        num: 262,
+        title: "This is fine...",
+        embed: "images/snapshots/262.png"
+    },
+    {
+        num: 261,
+        title: "Fractures 💠",
+        embed: "images/snapshots/261.png"
+    },
+    {
+        num: 260,
+        title: "Fluffier! ⬆️",
+        embed: "images/snapshots/260.png"
+    },
+    {
+        num: 259,
+        title: "🥕🥕🥕",
+        embed: "images/snapshots/259.png"
+    },
+    {
+        num: 258,
+        title: "Lemons",
+        embed: "images/snapshots/258.png"
+    },
+    {
+        num: 257,
+        title: "Zesty",
+        embed: "images/snapshots/257.png"
+    },
+    {
+        num: 256,
+        title: "Headshot",
+        embed: "images/snapshots/256.png"
+    },
+    {
+        num: 255,
+        title: "Grassfield",
+        embed: "images/snapshots/255.png"
+    },
+    {
+        num: 254,
+        title: "Petals",
+        embed: "images/snapshots/254.png"
+    },
+    {
+        num: 253,
+        title: "Pawesome!",
+        embed: "images/snapshots/253.png"
+    },
+    {
+        num: 252,
+        title: "Eyestrain chaos",
+        embed: "images/snapshots/252.png"
+    },
+    {
+        num: 251,
+        title: "KATAMAR(T)I",
+        embed: "images/snapshots/251.png"
+    },
+    {
+        num: 250,
+        title: "Cotton Candy Clouds",
+        embed: "images/snapshots/250.png"
+    },
+    {
+        num: 249,
+        title: "Blocky buildings",
+        embed: "images/snapshots/249.png"
+    },
+    {
+        num: 248,
+        title: "A(rti)rray",
+        embed: "images/snapshots/248.png"
+    },
+    {
+        num: 247,
+        title: "Dreamer",
+        embed: "images/snapshots/247.png"
+    },
+    {
+        num: 246,
+        title: "Interplanetary",
+        embed: "images/snapshots/246.png"
+    },
+    {
+        num: 245,
+        title: "One really big hug",
+        embed: "images/snapshots/245.png"
+    },
+    {
+        num: 244,
+        title: "Massive",
+        embed: "images/snapshots/244.png"
+    },
+    {
+        num: 243,
+        title: "Tiny",
+        embed: "images/snapshots/243.png"
+    },
+    {
+        num: 242,
+        title: "So queer, bunny",
+        embed: "images/snapshots/242.png"
+    },
+    {
+        num: 241,
+        title: "Upside down",
+        embed: "images/snapshots/241.png"
+    },
+    {
+        num: 240,
+        title: "Window",
+        embed: "images/snapshots/240.png"
+    },
+    {
+        num: 239,
+        title: "doodles",
+        embed: "images/snapshots/239.png"
+    },
+    {
+        num: 238,
+        title: "Magazine cover",
+        embed: "images/snapshots/238.png"
+    },
+    {
+        num: 237,
+        title: "Grilled cheese",
+        embed: "images/snapshots/237.png"
+    },
+    {
+        num: 236,
+        title: "Long scarf",
+        embed: "images/snapshots/236.png"
+    },
+    {
+        num: 235,
+        title: "Looking at yourselves",
+        embed: "images/snapshots/235.png"
+    },
+    {
+        num: 234,
+        title: "Ear shapes",
+        embed: "images/snapshots/234.png"
+    },
+    {
+        num: 233,
+        title: "Wires and thingamajigs",
+        embed: "images/snapshots/233.png"
+    },
+    {
+        num: 232,
+        title: "hey",
+        embed: "images/snapshots/232.png"
+    },
+    {
+        num: 231,
+        title: "Sharp-textured stuff",
+        embed: "images/snapshots/231.png"
+    },
+    {
+        num: 230,
+        title: "Ribbons",
+        embed: "images/snapshots/230.png"
+    },
+    {
+        num: 229,
+        title: "Frames",
+        embed: "images/snapshots/229.png"
+    },
+    {
+        num: 228,
+        title: "🌌🌳🟪",
+        embed: "images/snapshots/228.png"
+    },
+    {
+        num: 227,
+        title: "background test",
+        embed: "images/snapshots/227.png"
+    },
+    {
+        num: 226,
+        title: "Duet",
+        embed: "images/snapshots/226.png"
+    },
+    {
+        num: 225,
+        title: "so snuggly",
+        embed: "images/snapshots/225.png"
+    },
+    {
+        num: 224,
+        title: "Nyan-Arti!",
+        embed: "images/snapshots/224.png"
+    },
+    {
+        num: 223,
+        title: "so soft",
+        embed: "images/snapshots/223.png"
+    },
+    {
+        num: 222,
+        title: "0000FF",
+        embed: "images/snapshots/222.png"
+    },
+    {
+        num: 221,
+        title: "00FF00",
+        embed: "images/snapshots/221.png"
+    },
+    {
+        num: 220,
+        title: "FF0000",
+        embed: "images/snapshots/220.png"
+    },
+    {
+        num: 219,
+        title: "doodle",
+        embed: "images/snapshots/219.png"
+    },
+    {
+        num: 218,
+        title: "Learning each other's language",
+        embed: "images/snapshots/218.png"
+    },
+    {
+        num: 217,
+        title: "Hue",
+        embed: "images/snapshots/217.png"
+    },
+    {
+        num: 216,
+        title: "Trans drip",
+        embed: "images/snapshots/216.png"
+    },
+    {
+        num: 215,
+        title: "Bigender drip",
+        embed: "images/snapshots/215.png"
+    },
+    {
+        num: 214,
+        title: "Grab",
+        embed: "images/snapshots/214.png"
+    },
+    {
+        num: 213,
+        title: "Feeling pink ^_^",
+        embed: "images/snapshots/213.png"
+    },
+    {
+        num: 212,
+        title: "Frame 3",
+        embed: "images/snapshots/212.png"
+    },
+    {
+        num: 211,
+        title: "Frame 2",
+        embed: "images/snapshots/211.png"
+    },
+    {
+        num: 210,
+        title: "Frame",
+        embed: "images/snapshots/210.png"
+    },
+    {
+        num: 209,
+        title: "Lost",
+        embed: "images/snapshots/209.png"
+    },
+    {
+        num: 208,
+        title: "Phone call",
+        embed: "images/snapshots/208.png"
+    },
+    {
+        num: 207,
+        title: "BRAIN FREEZE",
+        embed: "images/snapshots/207.png"
+    },
+    {
+        num: 206,
+        title: "Ice cream",
+        embed: "images/snapshots/206.png"
+    },
+    {
+        num: 205,
+        title: "Vertical sketchpage!",
+        embed: "images/snapshots/205.png"
+    },
+    {
+        num: 204,
+        title: "doodle",
+        embed: "images/snapshots/204.png"
+    },
+    {
+        num: 203,
+        title: "🌿",
+        embed: "images/snapshots/203.png"
+    },
+    {
+        num: 202,
+        title: "🟪🟥🟧🟨🟩🟦",
+        embed: "images/snapshots/202.png"
+    },
+    {
+        num: 201,
+        title: "Random",
+        embed: "images/snapshots/201.png"
+    },
+    {
+        num: 200,
+        title: "/̊͆̋/͑͡͞/ͣͫ̀/ͬ̅ͯ҉̺̙͢/̈́̓̉/̏̈//",
+        embed: "images/snapshots/200.png"
+    },
+    {
+        num: 199,
+        title: "this",
+        embed: "images/snapshots/199.png"
+    },
+    {
+        num: 198,
+        title: "dots dots dots",
+        embed: "images/snapshots/198.png"
+    },
+    {
+        num: 197,
+        title: "MELONS",
+        embed: "images/snapshots/197.png"
+    },
+    {
+        num: 196,
+        title: "Rain",
+        embed: "images/snapshots/196.mp4"
+    },
+    {
+        num: 195,
+        title: "Squish",
+        embed: "images/snapshots/195.png"
+    },
+    {
+        num: 194,
+        title: "Funky colors",
+        embed: "images/snapshots/194.png"
+    },
+    {
+        num: 193,
+        title: "stop thinking",
+        embed: "images/snapshots/193.png"
+    },
+    {
+        num: 192,
+        title: "👁️👁️👁️",
+        embed: "images/snapshots/192.png"
+    },
+    {
+        num: 191,
+        title: "RAWR!",
+        embed: "images/snapshots/191.png"
+    },
+    {
+        num: 190,
+        title: "Keyboard",
+        embed: "images/snapshots/190.png"
+    },
+    {
+        num: 189,
+        title: "Daydreamer",
+        embed: "images/snapshots/189.png"
+    },
+    {
+        num: 188,
+        title: "Something simple",
+        embed: "images/snapshots/188.png"
+    },
+    {
+        num: 187,
+        title: "I DON'T KNOW! I'M STUPID AND GAY!",
+        embed: "images/snapshots/187.png"
+    },
+    {
+        num: 186,
+        title: "Icosahedron",
+        embed: "images/snapshots/186.png"
+    },
+    {
+        num: 185,
+        title: "Calm down",
+        embed: "images/snapshots/185.png"
+    },
+    {
+        num: 184,
+        title: "Tiny partner",
+        embed: "images/snapshots/184.png"
+    },
+    {
+        num: 183,
+        title: "Ears",
+        embed: "images/snapshots/183.png"
+    },
+    {
+        num: 182,
+        title: "💥",
+        embed: "images/snapshots/182.png"
+    },
+    {
+        num: 181,
+        title: "🌹",
+        embed: "images/snapshots/181.png"
+    },
+    {
+        num: 180,
+        title: "🤖",
+        embed: "images/snapshots/180.png"
+    },
+    {
+        num: 179,
+        title: "☂️",
+        embed: "images/snapshots/179.png"
+    },
+    {
+        num: 178,
+        title: "🩷",
+        embed: "images/snapshots/178.png"
+    },
+    {
+        num: 177,
+        title: "🍃",
+        embed: "images/snapshots/177.png"
+    },
+    {
+        num: 176,
+        title: "🌸",
+        embed: "images/snapshots/176.png"
+    },
+    {
+        num: 175,
+        title: "🪐",
+        embed: "images/snapshots/175.png"
+    },
+    {
+        num: 174,
+        title: "🔳",
+        embed: "images/snapshots/174.png"
+    },
+    {
+        num: 173,
+        title: "🧡",
+        embed: "images/snapshots/173.png"
+    },
+    {
+        num: 172,
+        title: "▶️",
+        embed: "images/snapshots/172.png"
+    },
+    {
+        num: 171,
+        title: "🌟",
+        embed: "images/snapshots/171.png"
+    },
+    {
+        num: 170,
+        title: "🌷",
+        embed: "images/snapshots/170.png"
+    },
+    {
+        num: 169,
+        title: "🖥️",
+        embed: "images/snapshots/169.png"
+    },
+    {
+        num: 168,
+        title: "📁",
+        embed: "images/snapshots/168.png"
+    },
+    {
+        num: 167,
+        title: "🚶",
+        embed: "images/snapshots/167.png"
+    },
+    {
+        num: 166,
+        title: "🌕",
+        embed: "images/snapshots/166.png"
+    },
+    {
+        num: 165,
+        title: "💐",
+        embed: "images/snapshots/165.png"
+    },
+    {
+        num: 164,
+        title: "🧋",
+        embed: "images/snapshots/164.png"
+    },
+    {
+        num: 163,
+        title: "🌅",
+        embed: "images/snapshots/163.png"
+    },
+    {
+        num: 162,
+        title: "🌐",
+        embed: "images/snapshots/162.png"
+    },
+    {
+        num: 161,
+        title: "🔌",
+        embed: "images/snapshots/161.png"
+    },
+    {
+        num: 160,
+        title: "☁️",
+        embed: "images/snapshots/160.png"
+    },
+    {
+        num: 159,
+        title: "〰️",
+        embed: "images/snapshots/159.png"
+    },
+    {
+        num: 158,
+        title: "📺",
+        embed: "images/snapshots/158.png"
+    },
+    {
+        num: 157,
+        title: "🥤",
+        embed: "images/snapshots/157.png"
+    },
+    {
+        num: 156,
+        title: "🏙️",
+        embed: "images/snapshots/156.png"
+    },
+    {
+        num: 155,
+        title: "🌄",
+        embed: "images/snapshots/155.png"
+    },
+    {
+        num: 154,
+        title: "⛸️",
+        embed: "images/snapshots/154.png"
+    },
+    {
+        num: 153,
+        title: "🌈",
+        embed: "images/snapshots/153.png"
+    },
+    {
+        num: 152,
+        title: "Circular",
+        embed: "images/snapshots/152.png"
+    },
+    {
+        num: 151,
+        title: "Windy day",
+        embed: "images/snapshots/151.png"
+    },
+    {
+        num: 150,
+        title: "Brown",
+        embed: "images/snapshots/150.png"
+    },
+    {
+        num: 149,
+        title: "BLEED",
+        embed: "images/snapshots/149.png"
+    },
+    {
+        num: 148,
+        title: "WHATEVER",
+        embed: "images/snapshots/148.png"
+    },
+    {
+        num: 147,
+        title: "Unfused",
+        embed: "images/snapshots/147.png"
+    },
+    {
+        num: 146,
+        title: "Sona stack",
+        embed: "images/snapshots/146.png"
+    },
+    {
+        num: 145,
+        title: "i have no time to think of an interesting title for this one",
+        embed: "images/snapshots/145.png"
+    },
+    {
+        num: 144,
+        title: "Egg curry",
+        embed: "images/snapshots/144.png"
+    },
+    {
+        num: 143,
+        title: "What? Is there anything wrong?",
+        embed: "images/snapshots/143.png"
+    },
+    {
+        num: 142,
+        title: "Just chilling",
+        embed: "images/snapshots/142.png"
+    },
+    {
+        num: 141,
+        title: "Dark mode",
+        embed: "images/snapshots/141.png"
+    },
+    {
+        num: 140,
+        title: "Glow",
+        embed: "images/snapshots/140.png"
+    },
+    {
+        num: 139,
+        title: "✨🏳️‍⚧️🌤️",
+        embed: "images/snapshots/139.png"
+    },
+    {
+        num: 138,
+        title: "Purple-flavored",
+        embed: "images/snapshots/138.png"
+    },
+    {
+        num: 137,
+        title: "Neon",
+        embed: "images/snapshots/137.png"
+    },
+    {
+        num: 136,
+        title: "plushies",
+        embed: "images/snapshots/136.png"
+    },
+    {
+        num: 135,
+        title: "crazy in pink",
+        embed: "images/snapshots/135.png"
+    },
+    {
+        num: 134,
+        title: "🟥🟩🟦",
+        embed: "images/snapshots/134.png"
+    },
+    {
+        num: 133,
+        title: "meh",
+        embed: "images/snapshots/133.png"
+    },
+    {
+        num: 132,
+        title: "ARTIBUN",
+        embed: "images/snapshots/132.mp4"
+    },
+    {
+        num: 131,
+        title: "Precipice",
+        embed: "images/snapshots/131.png"
+    },
+    {
+        num: 130,
+        title: ">ω<",
+        embed: "images/snapshots/130.png"
+    },
+    {
+        num: 129,
+        title: "a little too small",
+        embed: "images/snapshots/129.png"
+    },
+    {
+        num: 128,
+        title: "a little too big",
+        embed: "images/snapshots/128.png"
+    },
+    {
+        num: 127,
+        title: "big tail",
+        embed: "images/snapshots/127.png"
+    },
+    {
+        num: 126,
+        title: "Micro",
+        embed: "images/snapshots/126.png"
+    },
+    {
+        num: 125,
+        title: "NICE CROPPING",
+        embed: "images/snapshots/125.png"
+    },
+    {
+        num: 124,
+        title: "Pixel Sparkles ✨",
+        embed: "images/snapshots/124.png"
+    },
+    {
+        num: 123,
+        title: "Laser Pointer",
+        embed: "images/snapshots/123.png"
+    },
+    {
+        num: 122,
+        title: "Blurple",
+        embed: "images/snapshots/122.png"
+    },
+    {
+        num: 121,
+        title: "no thoughts. head in the clouds.",
+        embed: "images/snapshots/121.png"
+    },
+    {
+        num: 120,
+        title: "uughhhhshjdsiodzmxzkzl...,.,.,",
+        embed: "images/snapshots/120.png"
+    },
+    {
+        num: 119,
+        title: "all & null",
+        embed: "images/snapshots/119.png"
+    },
+    {
+        num: 118,
+        title: "Doodling around",
+        embed: "images/snapshots/118.png"
+    },
+    {
+        num: 117,
+        title: "wheeeeeeee!!!",
+        embed: "images/snapshots/117.png"
+    },
+    {
+        num: 116,
+        title: "ラグトレイン",
+        embed: "images/snapshots/116.png"
+    },
+    {
+        num: 115,
+        title: "BOOT LOADER",
+        embed: "images/snapshots/115.png"
+    },
+    {
+        num: 114,
+        title: "Funny Colors",
+        embed: "images/snapshots/114.png"
+    },
+    {
+        num: 113,
+        title: "Artiproto",
+        embed: "images/snapshots/113.png"
+    },
+    {
+        num: 112,
+        title: "Spaced Out",
+        embed: "images/snapshots/112.png"
+    },
+    {
+        num: 111,
+        title: "Cornered",
+        embed: "images/snapshots/111.png"
+    },
+    {
+        num: 110,
+        title: "Feral",
+        embed: "images/snapshots/110.png"
+    },
+    {
+        num: 109,
+        title: "Bunny²",
+        embed: "images/snapshots/109.png"
+    },
+    {
+        num: 108,
+        title: "Otherside",
+        embed: "images/snapshots/108.png"
+    },
+    {
+        num: 107,
+        title: "Lollipop",
+        embed: "images/snapshots/107.png"
+    },
+    {
+        num: 106,
+        title: "🎈",
+        embed: "images/snapshots/106.png"
+    },
+    {
+        num: 105,
+        title: "Gray",
+        embed: "images/snapshots/105.png"
+    },
+    {
+        num: 104,
+        title: "Pink",
+        embed: "images/snapshots/104.png"
+    },
+    {
+        num: 103,
+        title: "Purple",
+        embed: "images/snapshots/103.png"
+    },
+    {
+        num: 102,
+        title: "Blue",
+        embed: "images/snapshots/102.png"
+    },
+    {
+        num: 101,
+        title: "Green",
+        embed: "images/snapshots/101.png"
+    },
+]
+
 // Calculate totals for statistics
-totalCards = menuItems.reduce((sum, item) => sum + item.labels.length, 0);
-totalCharacters = menuItems.reduce((sum, item) => sum + item.labels.filter(label => label.isCharacter).length, 0);
+totalCards = menuItems.reduce((sum, item) => sum + item.cards?.length, 0);
+totalCharacters = menuItems.reduce((sum, item) => sum + item.cards?.filter(label => label.isCharacter).length, 0);
 totalMenus = menuItems.length;
 
 if (typeof module !== "undefined") {
-    module.exports = { menuItems };
+    module.exports = {
+        lastUpdated,
+        version,
+        menuLogoRedirect,
+        orbitData,
+        menuItems,
+        specialSearch,
+    };
+}
+
+// Helper function to add internal cards
+function internalCard({
+    href,
+    caption = "",
+    banner = false,
+    title,
+    subtitle,
+    unclickable = false,
+}) {
+
+    const attrs = [
+        `class="card internal"`,
+        `data-href="${href}"`
+    ];
+
+    if (caption) attrs.push(`data-caption="${caption}"`);
+    if (banner) attrs.push(`data-is-banner="true"`);
+    if (title) attrs.push(`data-override-title="${title}"`);
+    if (subtitle) attrs.push(`data-override-subtitle="${subtitle}"`);
+    if (unclickable) attrs.push(`data-is-unclickable="true"`);
+
+    return `<div ${attrs.join(" ")}></div>`;
+}
+
+
+function exportJSON() {
+    const masterjson = {};
+    masterjson.lastUpdated = lastUpdated;
+    masterjson.version = version;
+    masterjson.menuLogoRedirect = menuLogoRedirect;
+    masterjson.orbitData = orbitData;
+    masterjson.menuItems = menuItems;
+    masterjson.specialSearch = specialSearch;
+
+    return JSON.stringify(masterjson);
 }

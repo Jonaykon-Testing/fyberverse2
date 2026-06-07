@@ -3,8 +3,8 @@
 // --------------------------
 
 // Lazy loader base path
-const LAZY_BASE = 'https://cdn.jsdelivr.net/gh/blurplebun/blurplebun.github.io@latest/';
-const LOCAL_MODE = true; // if you don't use a cdn service to load images, just set this to true
+const LAZY_BASE = 'https://cdn.jsdelivr.net/gh/blurplebun/blurplebun.github.io/';
+const LOCAL_MODE = 1; // if you don't use a cdn service to load images, just set this to true
 
 // Sound control
 const INIT_MASTER_VOL = 1;
@@ -24,21 +24,23 @@ let SFX_MASTER_VOL = 0;
 // If you prefer to always use an orbit-less interface, set this to true
 let SIMPLE_MODE = getSimpleMode();
 // Simple mode index data
-const MAIN_MENU_TITLE = 'Main Menu';
-const MAIN_MENU_SUBTITLE = 'Welcome to the Fyberverse!';
+const MAIN_MENU_TITLE = pickSplash();
+const MAIN_MENU_SUBTITLE = 'artifyber.xyz';
+const MAIN_MENU_TEXT_OFFSET_Y = 90;
+const mainMenuLogo = 'images/menu-logo.png';
 const SIMPLE_MODE_MENU_LOGO_SCALE = 1.5;
 
-let ORBIT_FPS = 40;
-// Disable FPS limit on Safari to prevent flickering and stuttering
-if (/AppleWebKit/i.test(navigator.userAgent)) {
-    ORBIT_FPS = Infinity;
+function pickSplash() {
+    if (new Date().getMonth() == 5) return "Happy pride month!";
+    const filtered = splashLines.filter(s => !s.includes('<') /* && s.length < 30 */);
+    return filtered[Math.floor(Math.random() * filtered.length)];
 }
 
 // Links
 const eFolder = "e";
 
 let appLoaded = false;
-
+let LOW_ANIMATION_MODE = false;
 
 
 
@@ -46,13 +48,10 @@ let appLoaded = false;
 // --------------------------
 // UTILS
 // --------------------------
-
-// Utility helpers
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-// get CSS variable value
 function getCSSVar(name, parse = 'string') {
     const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     if (parse === 'int') return parseInt(val) || 0;
@@ -60,7 +59,6 @@ function getCSSVar(name, parse = 'string') {
     return val;
 }
 
-// set CSS variable value
 function setCSSVar(name, value) {
     document.documentElement.style.setProperty(name, value);
 }
@@ -72,7 +70,6 @@ window.mobileAndTabletCheck = function () {
     return check;
 };
 
-// set layout visibility
 function setLayoutViz(layout, viz) {
     if (viz) {
         layout.classList.remove('hidden');
@@ -81,37 +78,29 @@ function setLayoutViz(layout, viz) {
     layout.classList.add('hidden');
 }
 
-// get layout visibility
 function layoutViz(layout) {
     return !layout.classList.contains('hidden');
 }
 
-// set button visibility
 function setButtonViz(button, viz) {
-    if (viz) {
-        button.classList.remove('ui-hide');
-        return;
-    }
-    button.classList.add('ui-hide');
+    button.classList.toggle('ui-hide', !viz);
 }
 
-// get menu data from menuItems by id
 function getMenuData(menuId) {
-    return menuItems.find(m => m.menuId === menuId);
-}
-
-// get card data from menuItems by ids
-function getCardData(menuId, cardId) {
     const menu = menuItems.find(m => m.menuId === menuId);
-    return menu ? menu.labels.find(c => c.cardId === cardId) : null;
+    if (!menu) return console.warn(`Menu with id "${menuId}" not found.`);
+    return menu;
 }
 
-// change back button text content
+function getCardData(menuId, cardId) {
+    const menu = getMenuData(menuId);
+    return menu ? menu.cards.find(c => c.cardId === cardId) : null;
+}
+
 function changeBackBtnText(text = "Back") {
     backBtn.querySelector('span').textContent = text;
 }
 
-// copy to clipboard button function
 async function copyToClipboard(button, textbox) {
     try {
         await navigator.clipboard.writeText(textbox.value);
@@ -137,163 +126,123 @@ async function copyToClipboard(button, textbox) {
     }
 }
 
+function extractImagesFromHTML(html) {
+    const regex = /<img[^>]+src="([^"]+)"/g;
+    let match;
+    const urls = [];
+    while ((match = regex.exec(html)) !== null) {
+        urls.push(match[1]);
+    }
+    return urls;
+}
 
+function isEmojiOnly(str) {
+  const stringToTest = str.replace(/ /g,'');
+  const emojiRegex = /^(?:(?:\p{RI}\p{RI}|\p{Emoji}(?:\p{Emoji_Modifier}|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?(?:\u{200D}\p{Emoji}(?:\p{Emoji_Modifier}|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?)*)|[\u{1f900}-\u{1f9ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}])+$/u;
+  return emojiRegex.test(stringToTest) && Number.isNaN(Number(stringToTest));
+}
 
+function tweenOut(start, target, speed, onUpdate) {
+    let value = start;
+    let last = performance.now();
 
+    function update(now) {
+        const dt = (now - last) / 16.67; // normalize to ~60fps
+        last = now;
 
-// --------------------------
-// CAMERA
-// --------------------------
+        value += (target - value) * speed * dt;
+        onUpdate(value);
 
-let isDragging = false;
-let startX = 0, startY = 0;
-let currentX = 0, currentY = 0;
-let cameraFollowBtn = null;
-const parallaxFactor = -0.1;
+        if (Math.abs(value - target) > 0.005) {
+            requestAnimationFrame(update);
+        } else {
+            onUpdate(target);
+        }
+    }
 
-const transStyle = 'transition: filter var(--layout-transition-speed), transform 0.5s cubic-bezier(.2, .9, .2, 1), opacity 1000ms;'
-const transStyleSlow = 'transition: filter var(--layout-transition-speed), transform 1s cubic-bezier(.2, .9, .2, 1), opacity 1000ms;'
+    requestAnimationFrame(update);
+}
 
-setCSSVar('--menu-stage-scale-reset', getCSSVar('--menu-stage-scale'));
+// example:
+// const stop = tweenOut(0, 100, 0.1, v => console.log(v));
 
 // is wide screen?
 function checkWideScreen() {
-    if (SIMPLE_MODE) {
+    return false;
+    /* if (SIMPLE_MODE) {
         contentView.style.maxWidth = '100%';
         contentView.style.margin = 0;
         detailView.style.maxWidth = '100%';
         detailView.style.margin = 0;
         return false;
     }
-    return getCSSVar('--offset-main-menu-on-open') != '0';
+    return getCSSVar('--offset-main-menu-on-open') != '0'; */
 }
 
-// handle menu ring transform when panning
-let offsetMainMenu = false;
-function setElTransform(el, x, y, transition = null, offset = false) {
-    const isWideScreen = checkWideScreen();
-    const scale = getCSSVar('--menu-stage-scale');
-    el.style.transition = transition || el.style.transition;
-    el.style.transform = `translate(calc(${x}px ${offset && isWideScreen ? '+ ' + getCSSVar('--offset-main-menu-on-open') : ''}), ${y}px) scale(${scale})`;
 
-    // update starfield parallax if present
-    if (starfield) updateStarfieldParallax(el, x, y);
-}
 
-// update starfield parallax
-function updateStarfieldParallax(el, x, y) {
-    const layers = starfield.querySelectorAll('.star-layer');
-    layers.forEach(layer => {
-        const depth = parseFloat(layer.dataset.depth) || 1;
-        const px = -x * parallaxFactor * depth;
-        const py = -y * parallaxFactor * depth;
-        layer.style.transition = 'transform 0.3s cubic-bezier(0, 0, .5, 1)';
-        layer.style.transform = `translate(${px}px, ${py}px)`;
-    });
+
+
+
+// --------------------------
+// BUTTON STATES
+// --------------------------
+
+const UI_STATES = {
+    MAIN_MENU: {
+        backBtn: false,
+        settingsBtn: true,
+        playBgmBtn: true,
+        centerBtn: true,
+        downloadImgBtn: false
+    },
+
+    MENU_OPEN: {
+        backBtn: true,
+        settingsBtn: false,
+        playBgmBtn: false,
+        centerBtn: true,
+        downloadImgBtn: false
+    },
+
+    DETAIL_VIEW: {
+        backBtn: true,
+        settingsBtn: false,
+        playBgmBtn: false,
+        centerBtn: false,
+        downloadImgBtn: false
+    },
+
+    IMAGE_VIEW: {
+        backBtn: false,
+        settingsBtn: false,
+        playBgmBtn: false,
+        centerBtn: false,
+        downloadImgBtn: true
+    }
 };
 
-// toggle main menu offset on widescreen
-function toggleMainMenuOffset(bool) {
-    const isWideScreen = checkWideScreen();
-    if (!isWideScreen) return;
-    if (bool) {
-        offsetMainMenu = true;
-        // currentX = 0, currentY = 0;
-        setElTransform(mainMenu, currentX, currentY, null, offsetMainMenu);
-        return;
+function applyUIState(stateName) {
+    const state = UI_STATES[stateName];
+    if (!state) return;
+
+    setButtonViz(backBtn, state.backBtn);
+    setButtonViz(settingsBtn, state.settingsBtn);
+    setButtonViz(playBgmBtn, state.playBgmBtn);
+    setButtonViz(centerBtn, state.centerBtn);
+    setButtonViz(downloadImgBtn, state.downloadImgBtn);
+
+    if (stateName === "MAIN_MENU") {
+        setButtonViz(rerollBtn, false);
+        if (bgmEnabled) setButtonViz(playBgmBtn, false);
+        if (currentX + currentY == 0) setButtonViz(centerBtn, false);
     }
 
-    offsetMainMenu = false;
-    currentX = 0, currentY = 0;
-    setElTransform(mainMenu, currentX, currentY, null, offsetMainMenu);
-}
-
-
-function enableCameraControl(el) {
-
-    if (SIMPLE_MODE) return;
-
-    // begin drag
-    function beginDrag(clientX, clientY) {
-        isDragging = true;
-        startX = clientX - currentX;
-        startY = clientY - currentY;
-        el.style.cursor = 'grab';
+    if (stateName === "MENU_OPEN") {
+        setButtonViz(rerollBtn, false);
+        if (currentX + currentY == 0) setButtonViz(centerBtn, false);
     }
-
-    // move during drag
-    let lastDrag = 0;
-    function dragTo(clientX, clientY) {
-        const now = performance.now();
-        if (now - lastDrag < 16) return;
-        lastDrag = now;
-        if (!isDragging) return;
-        currentX = clientX - startX;
-        currentY = clientY - startY;
-        setButtonViz(centerBtn, true);
-        setElTransform(el, currentX, currentY, transStyle, offsetMainMenu);
-        resetCameraFollow()
-    }
-
-    // end drag
-    function endDrag() {
-        isDragging = false;
-        el.style.cursor = 'default';
-    }
-
-    // mouse events
-    el.addEventListener('mousedown', (e) => { beginDrag(e.clientX, e.clientY); });
-    window.addEventListener('mousemove', (e) => { dragTo(e.clientX, e.clientY); });
-    window.addEventListener('mouseup', endDrag);
-
-    // touch events
-    el.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
-        beginDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-        if (!isDragging || e.touches.length !== 1) return;
-        dragTo(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    window.addEventListener('touchend', endDrag);
-
-    // trackpad events
-    el.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        if (Math.abs(e.deltaX) < 100 && Math.abs(e.deltaY) < 100) {
-            currentX -= e.deltaX * 1.5;
-            currentY -= e.deltaY * 1.5;
-            setElTransform(el, currentX, currentY, null, offsetMainMenu);
-        }
-    }, { passive: false });
 }
-
-// handle snapping back camera to center
-function snapCameraToCenter(el) {
-    currentX = 0; currentY = 0;
-    offsetMainMenu = menuIsOpen;
-    if (checkWideScreen) resetCameraFollow();
-    setElTransform(el, currentX, currentY, transStyleSlow, offsetMainMenu);
-    setTimeout(() => {
-        starfield?.querySelectorAll('.star-layer').forEach(layer => layer.style.transition = '');
-    }, 900);
-    setButtonViz(centerBtn, false);
-}
-
-function resetMenuTransform() {
-    setElTransform(mainMenu, 0, 0, null, offsetMainMenu);
-    currentX = 0, currentY = 0;
-    blurMainMenu(menuIsOpen);
-}
-
-enableCameraControl(mainMenu);
-centerBtn.addEventListener('click', () => {
-    snapCameraToCenter(mainMenu);
-});
-
-
 
 
 
@@ -301,7 +250,7 @@ centerBtn.addEventListener('click', () => {
 // MAIN MENU
 // --------------------------
 
-// copy link icon
+// copy link
 const copyLinkIcon = `
     <span class="copy-link" title="Copy shareable link">
         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -316,7 +265,6 @@ const copiedLinkIcon = `
     </svg>
 `
 
-// copy link functionality
 function copyLinkHandler(layout, menuId, cardId = null) {
     let shareURL = !eFolder ? `${location.origin}${location.pathname}?m=${menuId}` : `${location.origin}${location.pathname}${eFolder}/${menuId}`;
     if (cardId) shareURL = !eFolder ? `${location.origin}${location.pathname}?m=${menuId}&i=${cardId}` : `${location.origin}${location.pathname}${eFolder}/${menuId}/${cardId}`;
@@ -335,380 +283,31 @@ function copyLinkHandler(layout, menuId, cardId = null) {
     });
 }
 
-/*
-function initMainMenu() {
-    menuItems.forEach(m => {
-        if (m.hidden || m.invisible) return;
-
-        const menu = document.createElement('div');
-        menu.classList.add('menu-item');
-        menu.style.borderColor = m.color || getCSSVar('--ring');
-        menu.dataset.id = m.menuId;
-        menu.innerHTML = m.title;
-        menu.addEventListener('click', () => { openMenu(menu, m); });
-
-        menuRing.appendChild(menu);
-    });
-}
-*/
-
-// make orbit group for menu items
-function makeOrbitGroup(orbitGroup) {
-    menuItems.forEach(m => {
-        if (m.hidden) return;
-        const orbit = m.orbit;
-        if (!orbitGroup[orbit]) orbitGroup[orbit] = [];
-        orbitGroup[orbit].push(m);
-    });
-}
-
-// calculate orbit positions
-function calculateMenuPos(angleRad, layer, direction, phaseOffset = 0) {
-    const oData = orbitData.find(od => od.orbit === layer);
-    layer = oData?.orbitNum || layer;
-
-    const baseRadius = getCSSVar('--menu-radius', 'int') || 180;
-    const r = layer === 0 ? 0 : baseRadius * layer * 1.2 + 60;
-
-    const baseDuration = getCSSVar('--ring-rotation-duration', 'float') || 60;
-    const periodSec = baseDuration * layer;
-    const omega = (2 * Math.PI) / periodSec * direction;
-
-    let x0, y0;
-    const oScaleX = oData?.scaleX || getCSSVar('--menu-orbit-scale-x', 'float');
-    const oScaleY = oData?.scaleY || getCSSVar('--menu-orbit-scale-y', 'float');
-    oX = oData?.offsetX || 0;
-    oY = oData?.offsetY || 0;
-
-    // orbit another menu?
-    let xC = 0, yC = 0;
-    if (oData?.center) {
-        const centerBtn = menuRing.querySelector(`.menu-item[data-menu-id="${oData.center}"]`);
-        if (centerBtn) {
-            xC = parseFloat(centerBtn.dataset.x) || 0;
-            yC = parseFloat(centerBtn.dataset.y) || 0;
-        }
-    }
-
-    x0 = (Math.cos(angleRad + phaseOffset * omega) * r * oScaleX) + oX + xC;
-    y0 = (Math.sin(angleRad + phaseOffset * omega) * r * oScaleY) + oY + yC;
-
-    return { r, omega, x0, y0 };
-}
-
-// calculate menu scale + hover effect
-let cursorX = 0, cursorY = 0;
-window.addEventListener('mousemove', e => { cursorX = e.clientX; cursorY = e.clientY; });
-
-function calculateMenuScale(btn, cursorPos = { x: cursorX, y: cursorY }) {
-    const maxDist = 300;
-
-    let zoom = 1;
-    const rect = btn.getBoundingClientRect();
-    const btnX = rect.left + rect.width / 2;
-    const btnY = rect.top + rect.height / 2;
-
-    const dx = cursorPos.x - btnX;
-    const dy = cursorPos.y - btnY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    zoom = 1 + Math.max(0, (1 - dist / maxDist)) * 0.375;
-    return zoom;
-}
-
-// apply orbit positions to menu elements
-function applyMenuPos(btn, s, r, omega, x0, y0) {
-    btn.style.left = '50%';
-    btn.style.top = '50%';
-    btn.dataset.radius = r;
-    btn.dataset.omega = omega;
-
-    btn.dataset.x = x0;
-    btn.dataset.y = y0;
-    btn.dataset.x0 = x0;
-    btn.dataset.y0 = y0;
-    btn.dataset.s = s;
-
-    btn.style.transform = `translate3d(calc(${btn.dataset.x}px + -50%), calc(${btn.dataset.y}px + -50%), 0) scale(${btn.dataset.s})`;
-}
-
-// create menu item elements for a given orbit layer
-function createMenuItemElements(menus, layer, orbitLayer, count, direction, phaseOffset) {
-    menus.forEach((m, i) => {
-        const angleDeg = (i / count + 0.75) * 360 + phaseOffset;
-        const angleRad = angleDeg * (Math.PI / 180);
-
-        const btn = document.createElement('div');
-        btn.className = 'menu-item';
-
-        btn.dataset.angleRad = angleRad;
-        btn.dataset.layer = layer;
-        btn.dataset.direction = direction;
-        btn.dataset.index = i;
-        btn.dataset.scale = m.scale || 1;
-        btn.dataset.menuId = m.menuId;
-
-        btn.style.setProperty('--glow', m.color);
-        btn.style.background = m.color || 'transparent';
-        const img = m.image ? `<div class="menu-item-thumb"><img src="${m.image}"  draggable="false"></div>` : ''
-        btn.innerHTML = `
-            <div class="menu-item-inner">
-                ${img}
-                ${m.showTitle && m.title ? `<div class="menu-item-title">${m.title}</div>` : ''}
-            </div>
-        `;
-
-        const { r, omega, x0, y0 } = calculateMenuPos(angleRad, layer, direction);
-        // const s = m.scale || 1;
-        const s = calculateMenuScale(btn);
-        applyMenuPos(btn, s, r, omega, x0, y0);
-
-        btn.addEventListener('click', () => { openMainMenuButton(btn, m); });
-        orbitLayer.appendChild(btn);
-    });
-}
-
-// handle opening menus from the main menu interface
-let openSingle = false;
-function openMainMenuButton(btn, m) {
-    animateExpander();
-    setCameraFollow(btn);
-    if (m.labels && m.labels.length == 1) {
-        openSingle = true;
-        if (m.menuId === "random") { openRandom(); setButtonViz(rerollBtn, true); return; }
-        openCardById(m.menuId, m.labels[0].cardId);
-        return;
-    }
-    openMenu(btn, m);
-}
-
-// execute expander animation (todo)
-function animateExpander() {
-    // playSound('sfxWarp', SFX_WARP_VOL);
-    return;
-}
-
-// position orbit rings
-const rings = [];
-function positionOrbitRings(rings) {
-    rings.forEach(ring => {
-        let layer = ring.dataset.layer;
-        const oData = orbitData.find(o => o.orbit == layer);
-
-        layer = oData?.orbitNum || layer;
-        const oScaleX = oData?.scaleX || getCSSVar('--menu-orbit-scale-x', 'float');
-        const oScaleY = oData?.scaleY || getCSSVar('--menu-orbit-scale-y', 'float');
-        let oX = oData?.offsetX || 0;
-        let oY = oData?.offsetY || 0;
-
-        // orbit another menu?
-        let xC = 0, yC = 0;
-        if (oData?.center) {
-            const centerBtn = menuRing.querySelector(`.menu-item[data-menu-id="${oData.center}"]`);
-            if (centerBtn) {
-                xC = parseFloat(centerBtn.dataset.x) || 0;
-                yC = parseFloat(centerBtn.dataset.y) || 0;
-            }
-        }
-        oX += xC;
-        oY += yC;
-
-        const baseRadius = getCSSVar('--menu-radius', 'int') || 180;
-        const diameter = (baseRadius * layer * 1.2 + 60) * 2;
-
-        ring.style.width = `${diameter}px`;
-        ring.style.height = `${diameter}px`;
-        ring.style.transform = `translate(calc(${oX}px + -50%), calc(${oY}px + -50%)) scale(${oScaleX}, ${oScaleY})`;
-        ring.style.zIndex = '-1';
-    });
-}
-
-// handle menu elements and positioning
-function orbitMenuHandler(orbitGroup) {
-    Object.keys(orbitGroup).forEach(l => {
-        const menus = orbitGroup[l];
-        const layer = parseFloat(l);
-        const oData = orbitData.find(o => o.orbit == layer);
-
-        const orbitLayer = document.createElement('div');
-        orbitLayer.classList.add('orbit-layer');
-        menuRing.appendChild(orbitLayer);
-
-        const direction = oData?.direction || (layer % 2 === 0 ? 1 : -1);
-        const phaseOffset = Math.random() * 360;
-        const count = menus.length;
-
-        createMenuItemElements(menus, layer, orbitLayer, count, direction, phaseOffset);
-
-        const ring = document.createElement('div');
-        ring.classList.add('orbit-ring');
-        ring.dataset.layer = layer;
-        ring.style.animationDelay = `${-layer * 0.5}s`;
-        rings.push(ring);
-
-        positionOrbitRings(rings);
-
-        menuRing.insertBefore(ring, menuRing.firstChild);
-
-    });
-}
-
-// add faraway (to ensure the draggable main menu works ... lol)
-function addFaraway() {
-    const far = {
-        title: 'faraway',
-        menuId: 'faraway',
-        invisible: true,
-        scale: 0.01,
-        orbit: 999,
-    };
-    menuItems.push(far);
-
-    const farData = {
-        orbit: 999,
-        scaleX: 1,
-        scaleY: 1,
-    };
-    orbitData.push(farData)
-}
-
-// create menu items
-function initMainMenu() {
-    resetMenuTransform();
-
-    // animate fade-in at first
-    mainMenu.classList.add('no-transition');
-    mainMenu.style.opacity = 0;
-    setTimeout(() => {
-        mainMenu.classList.remove('no-transition');
-        mainMenu.style.opacity = 1;
-    }, 1);
-
-    menuRing.classList.add('no-transition');
-    menuRing.style.scale = 0.9;
-    setTimeout(() => {
-        menuRing.classList.remove('no-transition');
-        menuRing.style.scale = "";
-    }, 1);
-
-    if (SIMPLE_MODE) { initSimpleMode(); return; }
-
-    addFaraway();
-
-    const orbitGroup = {};
-    makeOrbitGroup(orbitGroup);
-    orbitMenuHandler(orbitGroup);
-    requestAnimationFrame(orbitMenuLoop);
-}
-
-// update main menu scale on resize
-window.addEventListener('resize', () => { resetMenuTransform(); });
-
-// main loop for orbiting menu items
-let lastFrame = 0;
-let frame = 0;
-let frameAccum = 0;
-function orbitMenuLoop(t) {
-    const dt = (t - lastFrame) / 1000;
-    lastFrame = t;
-    frameAccum += dt;
-
-    // limit to certain fps
-    if (frameAccum >= 1 / ORBIT_FPS) {
-        frame += frameAccum;
-        frameAccum = 0;
-
-        const cursorPos = { x: cursorX, y: cursorY };
-
-        btn = $$('.orbit-layer .menu-item');
-        btn.forEach(b => {
-            const angleRad = parseFloat(b.dataset.angleRad);
-            const layer = parseFloat(b.dataset.layer);
-            const direction = parseFloat(b.dataset.direction);
-
-            const { r, omega, x0, y0 } = calculateMenuPos(angleRad, layer, direction, -frame);
-            const s = (!menuIsOpen && !isDragging) ? calculateMenuScale(b, cursorPos) * b.dataset.scale : b.dataset.scale;
-            applyMenuPos(b, s, r, omega, x0, y0);
 
 
-        });
-
-        followCameraWithCurrentButton();
-        zoomCameraWithCurrentButton()
-        if (!checkWideScreen()) resetCameraFollow();
-
-        positionOrbitRings(rings);
-    }
-
-    requestAnimationFrame(orbitMenuLoop);
-}
-
-// set button for the camera to follow 
-function setCameraFollow(btn) {
-    cameraFollowBtn?.classList.remove('active');
-    cameraFollowBtn = btn;
-}
-
-// apply camera follow
-function followCameraWithCurrentButton() {
-    if (!checkWideScreen()) return;
-    if (!cameraFollowBtn) return;
-    currentX = -cameraFollowBtn.dataset.x * getCSSVar('--menu-stage-scale-zoom', 'float');
-    currentY = -cameraFollowBtn.dataset.y * getCSSVar('--menu-stage-scale-zoom', 'float');
-    setElTransform(mainMenu, currentX, currentY, null, offsetMainMenu);
-    setButtonViz(centerBtn, true);
-    cameraFollowBtn.classList.add('active');
-}
-
-// apply camera zoom if following a button
-function zoomCameraWithCurrentButton() {
-    if (!checkWideScreen()) return
-    if (!cameraFollowBtn) {
-        setCSSVar('--menu-stage-scale', getCSSVar('--menu-stage-scale-reset'));
-        return;
-    }
-    setCSSVar('--menu-stage-scale', getCSSVar('--menu-stage-scale-zoom'));
-}
-
-// reset camera follow
-function resetCameraFollow() {
-    setCameraFollow(null);
-    setCSSVar('--menu-stage-scale', getCSSVar('--menu-stage-scale-reset'));
-}
-
-// blur main menu
 function blurMainMenu(bool) {
-    if (checkWideScreen()) {
-        mainMenu.classList.remove('blur');
-        starfield.classList.remove('blur');
-        return;
-    }
     if (bool) {
         mainMenu.classList.add('blur');
-        starfield.classList.add('blur');
         return;
     }
     mainMenu.classList.remove('blur');
-    starfield.classList.remove('blur');
 }
+
+let openSingle = false;
 
 
 
 // --------------------------
 // SIMPLE MODE
 // --------------------------
-
-// push categorized menus
-function simpleModePushMenus(menus, m) {
+function simpleModePushMenus(menus, m, banner = false) {
     menus.push({
         linkId: m.menuId,
         isInMenu: true,
-        // banner: true
+        banner: banner
     });
     m.isInMenu = true;
 }
-
-// separate menus
 function simpleModeSeparateMenus(menus, title, excerpt = null) {
     t = '<span style="border-left: 6px solid var(--white); padding-right: 8px"></span>' + title;
     e = excerpt ? '<span style="border-left: 6px solid var(--white); padding-right: 8px"></span>' + excerpt : '';
@@ -717,15 +316,13 @@ function simpleModeSeparateMenus(menus, title, excerpt = null) {
         subtitle: e
     });
 }
-
-// handle main menu content
 function simpleModeCreateMenus(menus, menuMatches) {
     orbitData.forEach(o => {
         let separateOnce = false;
         menuMatches.forEach(m => {
             if (m.orbit == o.orbit) {
                 if (!separateOnce) { simpleModeSeparateMenus(menus, o.title, o.desc); separateOnce = true; }
-                simpleModePushMenus(menus, m)
+                simpleModePushMenus(menus, m);
             }
         });
     });
@@ -734,28 +331,37 @@ function simpleModeCreateMenus(menus, menuMatches) {
     menuMatches.forEach(m => {
         if (!m.isInMenu) {
             if (!separateOnce) { simpleModeSeparateMenus(menus, "Uncategorized"); separateOnce = true; };
-            simpleModePushMenus(menus, m)
+            simpleModePushMenus(menus, m);
         };
     });
 }
-
-// initialize simple mode
 function initSimpleMode() {
-
-    // give parent data to each menu
     menuItems.forEach(m => { if (!m.parent) m.parent = 'index'; });
 
-    // create main menu
     let menus = [];
-    let menuMatches = menuItems.filter(menu => (!(menu.invisible || menu.hidden)));
-    if (menuMatches.length > 0) simpleModeCreateMenus(menus, menuMatches);
+    let menuMatches = menuItems.filter(menu => (!(menu.invisible || menu.hidden || menu.menuId == "logoHitbox")));
 
-    // main menu data
+    // if menuLogoRedirect is set to a menu, prepend its content to the index menu
+    const [redirectMenuId, redirectCardId] = menuLogoRedirect.split(":");
+    let redirectMenu;
+    if (redirectMenuId && !redirectCardId) {
+        redirectMenu = getMenuData(redirectMenuId);
+        if (redirectMenu && redirectMenu.cards) {
+            menus.push(...redirectMenu.cards);
+            menus.push({ separatorType: "space", title: "<br>", subtitle: "<br>" });
+            menuMatches = menuMatches.filter(m => m.menuId !== redirectMenuId);
+        }
+    }
+
+    if (menuMatches.length > 0) simpleModeCreateMenus(menus, menuMatches);
     const index = {
         menuId: "index",
-        title: MAIN_MENU_TITLE,
+        invisible: true,
+        /* title: MAIN_MENU_TITLE, */
+        title: "Main Menu",
         subtitle: MAIN_MENU_SUBTITLE,
-        labels: menus
+        cards: menus,
+        html: redirectMenu?.html || null
     }
     menuItems.push(index);
 }
@@ -813,22 +419,24 @@ function toggleViewMode() {
 // --------------------------
 // CONTENT VIEW
 // --------------------------
-
-// set and get current menu id
 function setCurrentMenu(id) { contentView.dataset.currentMenuId = id; }
 function currentMenu() { return contentView.dataset.currentMenuId; }
 
-// open menu by id (string)
-function openMenuById(id) {
-    const m = menuItems.find(m => m.menuId === id);
-    if (!m) return;
+// open menu with menu element and data
+function openMenuById(menuId) {
+    const targetMenu = menuItems?.find(m => m.menuId === menuId);
+    if (!targetMenu) return console.warn(`Menu with id "${menuId}" not found.`);
+    if (typeof openMenu !== 'function') return;
+    if (targetMenu.menuId === "random") {
+        openRandom();
+        setButtonViz(rerollBtn, true);
+        return;
+    }
+    openMenu(null, targetMenu);
 
-    const menuEl = menuRing.querySelector(`.menu-item[data-id="${m.menuId}"]`);
-    openMenu(menuEl, m);
 }
 
-// open menu with menu element and data
-let menuIsOpen = false;
+let currentM;
 function openMenu(menu, m) {
     resetLayoutTransition();
 
@@ -836,11 +444,9 @@ function openMenu(menu, m) {
     setLayoutViz(contentView, true);
     setLayoutViz(detailView, false);
     changeBackBtnText(m.parent && !openSingle ? getMenuData(m.parent).title : 'Close')
-    setButtonViz(backBtn, true);
-    setButtonViz(settingsBtn, false);
-    setButtonViz(playBgmBtn, false);
+    applyUIState("MENU_OPEN");
     menuIsOpen = true;
-    toggleMainMenuOffset(true);
+    /* toggleMainMenuOffset(true); */
 
     const title = m.invisible ? m.title : m.title + copyLinkIcon;
     const subtitle = m.menuId.includes("nansenz") ? m.subtitle + `<div class="ticker-bar"><div class="ticker-text"></div></div>` : m.subtitle;
@@ -855,16 +461,14 @@ function openMenu(menu, m) {
         const newBgm = menuToBgm[rootId];
 
         if (silentMenus.has(rootId)) {
-            // Menus that are set to be silent
             fadeVolume(bgm[currentBgm], 0);
+
         } else if (newBgm && newBgm !== currentBgm) {
-            // Menus with new BGM
             fadeVolume(bgm[currentBgm], 0);
             fadeVolume(bgm[newBgm], 1);
-
             currentBgm = newBgm;
+
         } else if (!newBgm) {
-            // Menus with no specific BGM = return to fyberverse
             fadeVolume(bgm[currentBgm], 0);
             fadeVolume(bgm.fyberverse, 1);
             currentBgm = "fyberverse";
@@ -872,8 +476,8 @@ function openMenu(menu, m) {
     }
 
     playSound('sfxSwap', SFX_SWAP_VOL);
-
     renderContentGrid(m);
+    currentM = m;
     setHistoryState(m.menuId);
 }
 
@@ -881,22 +485,29 @@ function openMenu(menu, m) {
 
 // ------ character randomizer -------
 
-// get all characters
+const excludeFromRandomList = ['random', 'menuTemplate', 'floriverse'];
+function excludeFromRandom(menuId) {
+    let allow = true;
+    excludeFromRandomList.forEach(id => {
+        if (menuId.includes(id)) allow = false;
+    });
+    return !allow;
+}
+
 let characters = [];
 let nextCharacter = null;
 function getAllCharacters() {
     characters = [];
     menuItems.forEach(menu => {
-        if (!menu.labels) return;
+        if (!menu.cards) return;
         if (menu.menuId === 'random') return;
-        if (menu.menuId.includes('floriverse')) return;
-        menu.labels.forEach(card => { if (card.cardId && card.isCharacter) characters.push({ menu, card }); });
+        if (excludeFromRandom(menu.menuId)) return;
+        menu.cards.forEach(card => { if (card.cardId && card.isCharacter) characters.push({ menu, card }); });
     });
     nextCharacter = randomNoRepeats(characters);
     return characters;
 }
 
-// ensure no repetition
 function randomNoRepeats(array) {
     let copy = array.slice();
     return function () {
@@ -911,9 +522,12 @@ function randomCharacter() {
     return nextCharacter();
 }
 
+let openedRandom = false;
 function openRandom() {
     const { menu, card } = randomCharacter();
     openCardById(menu.menuId, card.cardId);
+    setButtonViz(rerollBtn, true);
+    openedRandom = true;
 }
 
 rerollBtn.addEventListener('click', () => { openRandom(); });
@@ -923,13 +537,15 @@ rerollBtn.addEventListener('click', () => { openRandom(); });
 // the behavior for clicking cards that link to other menus
 function menuCardBehavior(card, c) {
     const m = getMenuData(c.linkId);
-    if (!m) return;
+    if (!m) return card.style.display = "none";
+    const t = c.titleOverride || m.title;
+    const s = c.subtitleOverride || m.subtitle;
     html = `
         <div class="card-text" style="background: color-mix(in srgb, ${m?.color || 'fff'} 10%, transparent)">
-            <div class="card-text-title">${m.title}</div>
-            ${m.subtitle ? `<div class="card-text-excerpt">${m.subtitle}</div>` : ''}
+            <div class="card-text-title">${t}</div>
+            ${s ? `<div class="card-text-excerpt">${s}</div>` : ''}
         </div>
-        ${m.image ? `<img src="${m.image}" class="thumb card-thumb-flip" style="background-color:${m.color}; animation-delay:${-card.dataset.gridIndex / 5}s">` : ''}
+        ${m.image ? `<img src="${m.image}" class="thumb card-thumb-flip" style="background-color:${m.color}; animation-delay:${-card.dataset.gridIndex / 5}s" draggable="false">` : ''}
         `;
 
     if (card.dataset.caption) html = `<div class="caption">${card.dataset.caption}</div>` + html;
@@ -938,10 +554,15 @@ function menuCardBehavior(card, c) {
     card.style.backgroundColor = 'transparent';
     card.style.border = `3px solid ${m.color}`;
     card.style.boxShadow = `inset 0 0 30px color-mix(in srgb, ${m.color} 50%, transparent)`;
+    card.style.setProperty('--js-card-glow-color', m.color);
 
     card.addEventListener('click', () => { if (m) openMenuById(m.menuId); });
-    card.addEventListener('mouseover', () => card.style.backgroundColor = `color-mix(in srgb, ${m.color} 30%, transparent)`);
-    card.addEventListener('mouseout', () => card.style.backgroundColor = `transparent`);
+    card.addEventListener('mouseover', () => {
+        card.style.backgroundColor = `color-mix(in srgb, ${m.color} 30%, transparent)`;
+    });
+    card.addEventListener('mouseout', () => {
+        card.style.backgroundColor = `transparent`;
+    });
 }
 
 // the behavior for clicking cards that reference other cards
@@ -950,7 +571,6 @@ function referenceCardBehavior(card, c) {
     const [menuRefId, cardRefId] = c.reference.split(':');
     const isMenu = !cardRefId;
 
-    // if the referenced link is just a menu
     if (isMenu) {
         const r = {};
         r.linkId = getMenuData(menuRefId).menuId;
@@ -958,43 +578,28 @@ function referenceCardBehavior(card, c) {
         return;
     }
 
-    // otherwise, if card id is stated
     const r = getCardData(menuRefId, cardRefId);
-
-    // if invalid
     if (!r) {
         card.style.display = "none";
         return;
     }
 
-    // setCardHTML(card, c, r);
-
-    /*
-    card.innerHTML = `
-        ${card.dataset.caption ? `<div class="caption">${card.dataset.caption}</div>` : ''}
-        ${r.image ? `<img src="${r.image}" class="thumb">` : ''}
-        <div class="card-text">
-            <div class="card-text-title">${r.title}</div>
-            ${r.subtitle ? `<div class="card-text-excerpt">${r.subtitle}</div>` : ''}
-        </div>
-        `;
-    */
-
-    // set dataset attributes
+    overrideCardData(card, r)
     setCardAttributes(card, r);
-
-    // special cards
     if (card.dataset.isMenu) { menuCardBehavior(card, r); return; }
-
-    // regular cards
     defaultCardBehavior(card, r)
+}
 
-    /*
-card.addEventListener('click', () => {
-    openCardById(r.cardParentId, r.cardId);
-    openFromReference = c.cardParentId;
-});
-*/
+// set / reset override dataset
+function overrideCardData(card, c, override = true) {
+    if (!override) {
+        c.titleOverride = '';
+        c.subtitleOverride = '';
+        setCardHTML(card, c);
+        return;
+    }
+    c.titleOverride = card.dataset.overrideTitle || '';
+    c.subtitleOverride = card.dataset.overrideSubtitle || '';
 }
 
 // the default behavior for clicking a regular card
@@ -1002,34 +607,36 @@ function defaultCardBehavior(card, c) {
     setCardHTML(card, c);
     card.addEventListener('click', () => {
         if (c.url) return window.open(c.url, '_blank');
-        if (!c.unclickable) openCard(card, c);
+        if (!card.dataset.isUnclickable) openCard(card, c);
     });
 }
 
 // handles the innerHTML of default cards (normal, url, unclickable)
 function setCardHTML(card, c, r = null) {
+    const t = c.titleOverride || c.title;
+    const s = c.subtitleOverride || c.subtitle;
     let html = `
-        <img src="${c.image}" class="thumb">
+        <img src="${c.image}" class="thumb" draggable="false">
         <div class="card-text">
-            <div class="card-text-title">${c.title}</div>
-            ${c.subtitle ? `<div class="card-text-excerpt">${c.subtitle}</div>` : ''}
+            <div class="card-text-title">${t}</div>
+            ${s ? `<div class="card-text-excerpt">${s}</div>` : ''}
         </div>
         `;
 
     if (c.blank) html = `
-        ${c.image ? `<img src="${c.image}" class="thumb">` : ''}
+        ${c.image ? `<img src="${c.image}" class="thumb" draggable="false">` : ''}
         `;
 
     if (!c.image) html = `
         <div class="card-text full">
-            <div class="card-text-title">${c.title}</div>
-            ${c.subtitle ? `<div class="card-text-excerpt">${c.subtitle}</div>` : ''}
+            <div class="card-text-title">${t}</div>
+            ${s ? `<div class="card-text-excerpt">${s}</div>` : ''}
         </div>
         `;
 
     if (r) {
         html = `
-            <img src="${r.image}" class="thumb">
+            <img src="${r.image}" class="thumb" draggable="false">
             <div class="card-text">
                 <div class="card-text-title">${r.title}</div>
                 ${r.subtitle ? `<div class="card-text-excerpt">${r.subtitle}</div>` : ''}
@@ -1037,7 +644,7 @@ function setCardHTML(card, c, r = null) {
             `;
 
         if (r.blank) html = `
-            ${r.image ? `<img src="${r.image}" class="thumb">` : ''}
+            ${r.image ? `<img src="${r.image}" class="thumb" draggable="false">` : ''}
             `;
 
         if (!r.image) html = `
@@ -1049,7 +656,6 @@ function setCardHTML(card, c, r = null) {
     }
 
     if (card.dataset.caption) html = `<div class="caption">${card.dataset.caption}</div>` + html;
-
     card.innerHTML = html;
 }
 
@@ -1059,6 +665,11 @@ function setCardAttributes(card, c) {
     if (c.reference) card.dataset.isReference = c.reference;
     if (c.url) card.dataset.url = c.url;
     if (c.banner) card.dataset.isBanner = c.banner;
+    if (c.semibanner) {
+        card.dataset.isSemiBanner = c.semibanner;
+        c.banner = true;
+        card.dataset.isBanner = true;
+    }
     if (c.isCharacter) card.dataset.isCharacter = c.isCharacter;
     if (c.unclickable) card.dataset.isUnclickable = c.unclickable;
     if (c.blank) card.dataset.blank = c.blank;
@@ -1068,6 +679,13 @@ function setCardAttributes(card, c) {
 function separatorBehavior(card, c) {
     card.classList.remove('card');
     card.classList.add('card-separator');
+    if (c.separatorType === "space") {
+        card.innerHTML = `
+            <div class="card-separator-title">${c.title || ''}</div>
+            <div class="card-separator-subtitle">${c.subtitle || ''}</div>
+        `;
+        return;
+    }
     card.innerHTML = `
         <div class="card-separator-title">${c.title || ''}</div>
         <div class="card-separator-subtitle">${c.subtitle || ''}</div>
@@ -1076,13 +694,25 @@ function separatorBehavior(card, c) {
 }
 
 // render the content grid from a menu data
-function renderContentGrid(m) {
-    contentView.scrollTop = 0;
+let lastRenderedMenu = null;
+function renderContentGrid(m, animate = true) {
+    /* contentView.scrollTop = 0; */
     contentViewGrid.innerHTML = '';
+    if (m.html) contentViewGrid.innerHTML = `<div class="content-view-html">${m.html}</div>`;
+    contentViewGrid.classList.remove('no-margin');
+    if (m.noMargin) contentViewGrid.classList.add('no-margin');
+
+    setCSSVar('--content-view-grid-bg-color', `color-mix(in srgb, ${getCSSVar('--content-view-grid-bg-color-default')} ${getCSSVar('--content-view-grid-bg-color-opacity-default')}%, transparent)`);
+    setCSSVar('--content-view-grid-bg-color-2', `color-mix(in srgb, ${getCSSVar('--content-view-grid-bg-color-2-default')} ${Math.min(getCSSVar('--content-view-grid-bg-color-opacity-default', 'float') + 20, 100)}%, transparent)`);
+    if (m.gridColor) {
+        setCSSVar('--content-view-grid-bg-color', `color-mix(in srgb, ${m.gridColor}  ${Math.min((m.gridOpacity || 0.1) * 100, 100)}%, transparent)`);
+        setCSSVar('--content-view-grid-bg-color-2', `color-mix(in srgb, ${m.gridColor2 || m.gridColor}  ${Math.min((m.gridOpacity || 0.1) * 100 + 10, 100)}%, transparent)`);
+    }
 
     let i = 0;
     let cardArray = [];
-    m.labels.forEach(c => {
+    const frag = document.createDocumentFragment();
+    m.cards.forEach(c => {
         const card = document.createElement('div');
         card.classList.add('card');
         card.dataset.id = c.cardId;
@@ -1091,28 +721,36 @@ function renderContentGrid(m) {
         cardArray.push(card);
         i++;
 
-        // set dataset attributes
+        overrideCardData(card, c, false);
         setCardAttributes(card, c);
+        frag.appendChild(card);
 
-        contentViewGrid.appendChild(card);
-
-        // special cards
         if (card.dataset.isMenu) { menuCardBehavior(card, c); return; }
         if (card.dataset.isReference) { referenceCardBehavior(card, c); return; }
-
-        // separators
         if (!c.cardId) { card.dataset.isSeparator = 'true'; separatorBehavior(card, c); return; }
 
-        // regular cards
         defaultCardBehavior(card, c)
     });
+    contentViewGrid.appendChild(frag);
 
-    animateCardFirstTime(cardArray);
+    if (lastRenderedMenu?.menuId != m.menuId) {
+        contentView.scrollTop = 0;
+        if (animate) animateCardFirstTime(cardArray);
+        lastRenderedMenu = m;
+    }
+    if (m.menuId === "dailyartplus") snapshotViewer();
+    internalCardHandler(contentViewGrid);
     initLazyLoader(contentViewGrid);
 }
 
 // animate card at first
 function animateCardFirstTime(cardArray) {
+    /*
+    if (!LOW_ANIMATION_MODE) tweenOut(0.5, 1, 0.25, v => {
+        contentViewGrid.style.scale = `${v} 1`;
+    });
+    */
+
     cardArray.forEach(card => {
         card.classList.add('no-transition');
         card.style.translate = "0 25px";
@@ -1121,7 +759,7 @@ function animateCardFirstTime(cardArray) {
             card.classList.remove('no-transition');
             card.style.translate = "";
             card.style.opacity = "";
-        }, (card.dataset.gridIndex + 1) * getCSSVar('--grid-cascade-transition-speed', 'int') / 10);
+        }, (card.dataset.gridIndex + 1) * getCSSVar('--content-view-grid-cascade-transition-speed', 'int') / 10);
     });
 }
 
@@ -1139,7 +777,7 @@ function openCardById(menuId, cardId) {
 
     const menu = menuItems.find(m => m.menuId === menuId);
     if (!menu) return;
-    const c = menu.labels.find(c => c.cardId === cardId);
+    const c = menu.cards.find(c => c.cardId === cardId);
     if (!c) return;
 
     const card = contentViewGrid.querySelector(`.card[data-id="${cardId}"]`);
@@ -1158,7 +796,12 @@ function openCard(card, c) {
     const active = card.cloneNode(true);
     active.classList.add('active');
     delete active.dataset.isBanner;
+    delete active.dataset.isSemiBanner;
+    overrideCardData(active, c, false);
 
+    active.innerHTML += `<div class="copy-link-active-card-wrapper">${copyLinkIcon}</div>`
+
+    // animate active card on creation
     active.classList.add('no-transition');
     active.style.translate = "10px";
     active.style.scale = "0.95";
@@ -1174,6 +817,44 @@ function openCard(card, c) {
         detailViewContent.style.translate = "";
     }, 1);
 
+
+    if (!LOW_ANIMATION_MODE) {
+        (function () {
+            const cardText = active.querySelector('.card-text');
+            if (!cardText) return;
+
+            const cTExcerpt = cardText.querySelector('.card-text-excerpt');
+            if (cTExcerpt) cTExcerpt.style.marginTop = '8px';
+            const copyLinkWrapper = active.querySelector('.copy-link-active-card-wrapper');
+            cardText.style.opacity = 0;
+            copyLinkWrapper.style.opacity = 0;
+            detailViewContent.style.height = 0;
+
+            if (getCSSVar('--phone-mode') == 0) {
+                active.style.height = `25%`;
+                tweenOut(0, 1, 0.1, v => {
+                    active.style.height = `${(v * 75) + 25}%`;
+                    cardText.style.opacity = v;
+                    copyLinkWrapper.style.opacity = v;
+                });
+
+            } else {
+                active.style.maxWidth = `25%`;
+                tweenOut(0, 1, 0.1, v => {
+                    active.style.maxWidth = `${(v * 75) + 25}%`;
+                    cardText.style.opacity = v;
+                    copyLinkWrapper.style.opacity = v;
+                });
+            }
+
+            tweenOut(0, 1, 0.0875, v => {
+                detailViewContent.style.height = `${(v * 100)}%`;
+            });
+        }());
+    }
+
+
+
     if (active.dataset.caption) active.removeChild(active.querySelector(".caption"));
     detailViewHeader.appendChild(active);
 
@@ -1182,9 +863,9 @@ function openCard(card, c) {
 
     playSound('sfxSwap', SFX_SWAP_VOL);
 
-    // was the card opened from single-card menu?
-    if (openSingle) {
-        setHistoryState(c.cardParentId);
+    if (openedRandom) {
+        replaceHistoryState(c.cardParentId, c.cardId);
+        openedRandom = false;
         return;
     }
     setHistoryState(c.cardParentId, c.cardId);
@@ -1195,32 +876,182 @@ function renderCardDetail(c) {
     detailViewContent.scrollTop = 0;
 
     const menu = getMenuData(c.cardParentId);
-    let html = c.detail || '';
-    if (c.isCharacter) html = characterHTMLBuilder(c, html)
+    const html = cardHTMLBuilder(c)
 
-    detailViewContent.innerHTML = `
-        <h1>
+    let tabs = '';
+    let gallery = '', relatives = '';
+    const images = extractImagesFromHTML(html);
+    const hasGallery = (c.gallery && c.gallery.length != 0) || (images && images.length != 0) || (c.refsheet);
+
+    let sectionData;
+    if (c.sections) sectionData = createCardSections(c);
+    if (hasGallery || c.relatives || c.sections) {
+
+        tabs = `
+            <button class="tab main" type="button">Main</button>
+            ${sectionData ? sectionData.tabs : ''}
+            ${hasGallery ? `<button class="tab gallery" type="button">Gallery</button>` : ''}
+            ${c.relatives && c.relatives.length > 0 ? `<button class="tab relatives" type="button">Related Cards</button>` : ''}
+            `
+
+        gallery = hasGallery ? `<div class="container grid">`
+            + (c.refsheet ? `<img src=${c.refsheet}>` : '')
+            + (c.gallery ? c.gallery.map(imgSrc => `<img src="${imgSrc}">`).join('') : '')
+            + (images ? images.map(imgSrc => (!c.gallery?.includes(imgSrc) && !(c.refsheet === imgSrc)) ? `<img src="${imgSrc}">` : '').join('') : '')
+            + `</div><br>`
+            : '';
+
+        relatives = c.relatives ? c.relatives.length != 0 ? `<div class="container">`
+            + c.relatives.map(rel => `<div class="card internal" data-href="${rel.cardId}" data-caption="${rel.relation}"></div>`).join('')
+            + `</div><br>`
+            : '' : '';
+    }
+
+    const tabEl = tabs ? `<small class="detail-view-tabs">${tabs}</small><br>` : '';
+    const mainSection = `
+        <div class="detail-section detail-main">
             ${!c.blank
             ? `
                 <small class="card-parent-link"><a data-open-card="${menu.menuId}">${menu.title}</a> /</small>
-                <br>
-                ${c.title}${copyLinkIcon}`
-            : `<small class="card-parent-link">From <a data-open-card="${menu.menuId}">${menu.title}</a></small>${copyLinkIcon}`}
-        </h1>
+                <h1 style="margin-top: 0;">${c.title}</h1>`
+            : `<small class="card-parent-link">From <a data-open-card="${menu.menuId}">${menu.title}</a></small>`}
         <hr>
         ${html}
-        `;
+        </div>`;
 
+    const gallerySection = gallery ? `<div class="detail-section detail-gallery remove">${gallery}</div>` : '';
+    const relativesSection = relatives ? `<div class="detail-section detail-relatives remove">${relatives}</div>` : '';
+    const customSection = sectionData ? sectionData.html ? sectionData.html.map(d => `<div class="detail-section detail-${c.sections[sectionData.html.indexOf(d)].title.replaceAll(" ", "-")} remove">${d}</div>`).join('') : '' : '';
 
-    cardDetailScriptHandler(c)
-    copyLinkHandler(detailView, menu.menuId, c.cardId);
+    detailViewContent.innerHTML = `${tabEl}${mainSection}${customSection}${gallerySection}${relativesSection}`;
+
+    emojiHandler();
+    cardDetailScriptHandler(c);
+    if (!menu.invisible) copyLinkHandler(detailView, menu.menuId, c.cardId);
+    if (tabs) handleDetailViewTabs(c);
 
     internalCardHandler();
 }
 
+function emojiHandler() {
+    const emojiRegex = /:([a-zA-Z0-9_]+):/g;
+    const walker = document.createTreeWalker(detailViewContent, NodeFilter.SHOW_TEXT, null, false);
+    const textNodes = [];
+
+    let node;
+    while (node = walker.nextNode()) {
+        textNodes.push(node);
+    }
+
+    textNodes.forEach(textNode => {
+        const text = textNode.nodeValue;
+        let match;
+        let lastIndex = 0;
+        const fragments = [];
+
+        emojiRegex.lastIndex = 0;
+        while ((match = emojiRegex.exec(text)) !== null) {
+            fragments.push(document.createTextNode(text.slice(lastIndex, match.index)));
+
+            const emojiName = match[1].toLowerCase();
+            if (emojiList.includes(emojiName)) {
+                const img = document.createElement('img');
+                img.src = `/emojis/${emojiName}.png`;
+                img.alt = match[0];
+                img.className = 'emoji';
+                img.draggable = false;
+                img.dataset.caption = `:${emojiName}:`;
+                fragments.push(img);
+            }
+
+            lastIndex = emojiRegex.lastIndex;
+        }
+
+        if (fragments.length) {
+            fragments.push(document.createTextNode(text.slice(lastIndex)));
+            fragments.forEach(fragment => textNode.parentNode.insertBefore(fragment, textNode));
+            textNode.remove();
+        }
+    });
+}
+
+// create custom sections
+function createCardSections(c) {
+    let tabs = '';
+    let html = [];
+    c.sections.forEach(s => {
+        const secTitle = s.title;
+        const secDetail = s.detail;
+        tabs += `<button class="tab" type="button">${secTitle}</button>`;
+        html.push(secDetail);
+    });
+    return { tabs, html };
+}
+
+// handle navigation tabs on the detail view
+function handleDetailViewTabs(c, open = null) {
+    const tabsContainer = detailViewContent.querySelector('.detail-view-tabs');
+    if (!tabsContainer) return;
+
+    const btns = tabsContainer.querySelectorAll('button.tab');
+    const secs = detailViewContent.querySelectorAll('.detail-section');
+
+    function setActive(button) {
+        btns.forEach(b => b.classList.remove('active'));
+        if (button) button.classList.add('active');
+    }
+
+    function showSection(section) {
+        secs.forEach(s => { if (!s) return; s.classList.add('remove'); });
+        if (section) {
+            section.classList.remove('remove');
+            section.classList.add('no-transition');
+            section.style.opacity = 0;
+            section.style.transform = "translateX(20px)";
+            setTimeout(() => {
+                section.classList.remove('no-transition');
+                section.style.opacity = 1;
+                section.style.transform = "none";
+            }, 1);
+        }
+    }
+
+    function activateTab(index) {
+        const b = btns[index];
+        const s = secs[index];
+        if (!b || !s) return;
+
+        setActive(b);
+        showSection(s);
+
+        let sName = s.classList[1].replace("detail-", "");
+        if (sName === "main") return;
+
+        setHistoryState(c.cardParentId, c.cardId, sName);
+    }
+
+    activateTab(0);
+
+    btns.forEach((b, i) => {
+        b.addEventListener('click', () => activateTab(i));
+    });
+
+    if (open) {
+        btns.forEach((_, i) => {
+            const s = secs[i];
+            if (!s) return;
+
+            let sName = s.classList[1].replace("detail-", "");
+            if (sName === "main") sName = null;
+
+            if (sName === open) activateTab(i);
+        });
+    }
+}
+
 // handles card that are placed as div element inside the detail view
-function internalCardHandler() {
-    cards = detailViewContent.querySelectorAll(".card.internal");
+function internalCardHandler(parent = detailViewContent) {
+    const cards = parent.querySelectorAll(".card.internal");
     cards.forEach(card => {
         const c = {};
         c.reference = card.dataset.href;
@@ -1228,33 +1059,100 @@ function internalCardHandler() {
     });
 }
 
-// HTML builder for character cards
-function characterHTMLBuilder(c, html) {
-    const cSpecies = c.cSpecies ? `Species: ${c.cSpecies}<br>` : '';
-    const cPronouns = c.cPronouns ? `Pronouns: ${c.cPronouns}<br>` : '';
-    const cGender = c.cGender ? `Gender: ${c.cGender}<br>` : '';
-    const cSexuality = c.cSexuality ? `Sexuality: ${c.cSexuality}<br>` : '';
-    const cNicknames = c.cNicknames ? `Nickname: ${c.cNicknames}<br>` : '';
-    const cReference = c.cReference ? `<br><h2>Reference Art:</h2><br><img src="${c.cReference}"><br><br>` : '';
-    const cGallery = c.cGallery ? c.cGallery.length != 0 ? `<hr><h2>Gallery:</h2><div class="imgContainer">` + c.cGallery.map(imgSrc => `<img src="${imgSrc}">`).join('') + `</div><br>` : '' : '';
-    const cAddOns = c.cAddOns ? `<br>${c.cAddOns}<br>` : '';
-    const details = c.detail ? `<hr>${html}<br>` : '';
-    const cRelations = c.cRelations ? c.cRelations.length != 0 ? `<hr><h2>Related Characters:</h2><div class="imgContainer">` + c.cRelations.map(rel => `<div class="card internal" data-href="${rel.cardId}" data-caption="${rel.relation}"></div>`).join('') + `</div><br>` : '' : '';
+function normalizeFlagName(value) {
+    const name = value?.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_-]/g, '');
+    if (emojiList.includes(name)) return name;
+    return null;
+}
 
-    html = `
-        <a data-open-card="info:ocrules">Character rules</a><br>
-        <br>
-        ${cSpecies}
-        ${cPronouns}
-        ${cGender}
-        ${cSexuality}
-        ${cNicknames}
-        ${cAddOns}
-        ${cReference}
-        ${details}
-        ${cGallery}
-        ${cRelations}
-    `;
+function getGenderFlagName(gender) {
+    if (!gender) return null;
+    const normalized = gender.trim().toLowerCase();
+    if (normalized === 'male' || normalized === 'female') return null;
+    if (normalized.includes('non-binary') || normalized.includes('nonbinary')) return 'nonbinary';
+    if (normalized.includes('trans')) return 'trans';
+    if (normalized.includes('genderless') || normalized.includes('agender')) return 'agender';
+    /* if (normalized.includes('bigender')) return 'bigender';
+    if (normalized.includes('intersex')) return 'bigender';
+    if (normalized.includes('genderfluid')) return 'genderfluid';
+    ;
+    if (normalized.includes('any-gender') || normalized.includes('pangender')) return 'pangender'; */
+    return normalizeFlagName(normalized);
+}
+
+function getSexualityFlagName(sexuality) {
+    if (!sexuality) return null;
+    const normalized = sexuality.trim().toLowerCase();
+    /* if (normalized.includes('lesbian')) return 'lesbian';
+    if (normalized.includes('bisexual') || normalized === 'bi') return 'bisexual';
+    if (normalized.includes('gay')) return 'gay';
+    if (normalized.includes('pan')) return 'pansexual';
+    if (normalized.includes('asexual')) return 'asexual';
+    if (normalized.includes('aromantic')) return 'aromantic';
+    if (normalized.includes('aroace')) return 'aroace';
+    if (normalized.includes('demi')) return 'demisexual';
+    if (normalized.includes('omnisexual')) return 'omnisexual';
+    if (normalized.includes('queer') || normalized.includes('questioning')) return 'rainbow'; */
+    return normalizeFlagName(normalized);
+}
+
+// HTML builder for character cards
+const CHARACTER_RULES_URL = `<a data-open-card="info:ocrules">`;
+function cardHTMLBuilder(c) {
+    let html = c.detail + (c.html || '') || '';
+    if (c.isCharacter) {
+        const refsheet = c.refsheet ? `<h2>Reference Art:</h2><br><img src="${c.refsheet}"><br><br>` : '';
+        const gallery = c.gallery ? c.gallery.length > 1 ? `<hr><h2>Top Images:</h2><div class="container">` + c.gallery.slice(1, 6).map(imgSrc => `<img src="${imgSrc}">`).join('') + `</div><br>` : '' : '';
+        let details = c.detail ? `${c.detail}<br>` : '';
+        const extraHTML = c.html ? `<hr>${c.html}<br>` : '';
+
+        const genderFlag = getGenderFlagName(c.gender);
+        const sexualityFlag = getSexualityFlagName(c.sexuality);
+        let rows = '';
+
+        if (genderFlag || sexualityFlag || c.flags) {
+            const flagEmojis = `${genderFlag ? `:${genderFlag}:` : ''} ${sexualityFlag ? `:${sexualityFlag}:` : ''} ${c.flags ? c.flags.map(f => !isEmojiOnly(f) ? `:${f}:` : `${f}`).join(' ') : ''}`.trim();
+            if (flagEmojis) rows += `<tr><td colspan="2"><h1 style="margin: 0;">${flagEmojis}</h1></td></tr>`;
+        }
+
+        function pickTableImage(c) {
+            if (Array.isArray(c.gallery) && c.gallery.length > 0)
+                return c.gallery[0];
+            return "";
+        }
+
+        const tableImage = pickTableImage(c) ? `<tr><td colspan="2"><img src="${pickTableImage(c)}" style="max-width: 100%; background-color: ${c.color || 'transparent'};"></td></tr>` : '';
+
+        if (c.species) rows += `<tr><td>Species</td><td>${c.species}</td></tr>`;
+        if (c.pronouns) rows += `<tr><td>Pronouns</td><td>${c.pronouns}</td></tr>`;
+        if (c.gender) rows += `<tr><td>Gender</td><td>${c.gender}</td></tr>`;
+        if (c.sexuality) rows += `<tr><td>Sexuality</td><td>${c.sexuality}</td></tr>`;
+        if (c.aliases) rows += `<tr><td>Aliases</td><td>${c.aliases}</td></tr>`;
+        if (c.extra) rows += `<tr><td colspan="2">${c.extra}</td></tr>`;
+        if (c.characterAttrs) {
+            for (const attr in c.characterAttrs) {
+                rows += `<tr><td>${attr}</td><td>${c.characterAttrs[attr]}</td></tr>`;
+            }
+        }
+
+        details += refsheet
+
+        const table = rows ? `
+            <table>
+            <tr><td colspan="2">${CHARACTER_RULES_URL}Character rules</a></td></tr>
+                ${tableImage}
+                ${rows}
+            </table>` : '';
+
+        html = `
+        <div class="character-info">
+            ${details ? `<div class="character-detail">${details}</div>` : ''}
+            ${table}
+        </div>
+        ${extraHTML}
+        ${gallery}
+        `;
+    }
     return html;
 }
 
@@ -1268,7 +1166,7 @@ function characterHTMLBuilder(c, html) {
 
 // handle image preview overlay
 document.addEventListener('click', (e) => {
-    const img = e.target.closest('#detailViewContent img');
+    const img = e.target.closest('#detailViewContent img') || e.target.closest('#contentViewGrid img');
     if (!img) return;
     if (img.classList.contains("thumb")) return;
 
@@ -1278,9 +1176,29 @@ document.addEventListener('click', (e) => {
     imageView.innerHTML = `<img src="${img.src}" alt="preview" ${caption ? 'data-hasCaption=true' : ''}>${caption}${subcaption}`;
     disableZoom();
     setLayoutViz(imageView, true);
+    applyUIState("IMAGE_VIEW");
     playSound('sfxPageOpen', SFX_PAGE_OPEN_VOL);
 
-    imageView.addEventListener('click', () => { enableZoom(); setLayoutViz(imageView, false); playSound('sfxPageClose', SFX_PAGE_CLOSE_VOL); }, { once: true });
+    downloadImgBtn.addEventListener('click', () => {
+        window.open(img.src, 'Image')
+    });
+
+    const imgEl = imageView.querySelector('img');
+    imgEl.classList.add('no-transition');
+    imgEl.style.scale = 0.1;
+    imgEl.style.opacity = 0;
+    setTimeout(() => {
+        imgEl.classList.remove('no-transition');
+        imgEl.style.scale = "";
+        imgEl.style.opacity = "";
+    }, 1);
+
+    imageView.addEventListener('click', () => {
+        enableZoom();
+        setLayoutViz(imageView, false);
+        applyUIState("DETAIL_VIEW");
+        playSound('sfxPageClose', SFX_PAGE_CLOSE_VOL);
+    }, { once: true });
 });
 
 function disableZoom() {
@@ -1294,59 +1212,6 @@ function enableZoom() {
     if (!vp) return;
     vp.setAttribute('content', 'width=device-width, initial-scale=1');
 }
-
-
-
-
-
-// --------------------------
-// STARS
-// --------------------------
-
-// create star layers
-function generateStarLayer(layerCount, starsPerLayer, l) {
-    const layer = document.createElement('div');
-    layer.classList.add('star-layer');
-    layer.dataset.depth = 0.5 + (l / layerCount) * 1;
-    for (let i = 0; i < starsPerLayer; i++) {
-        const star = document.createElement('div');
-        star.classList.add('star');
-        const size = Math.random() * 3 + 1;
-        star.style.width = `${size}px`;
-        star.style.height = `${size}px`;
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.top = `${Math.random() * 100}%`;
-        star.style.animationDelay = `-${Math.random() * 5}s`;
-        layer.appendChild(star);
-    }
-    return layer;
-}
-
-// create starfield
-function createStarfield(layerCount = 3, starsPerLayer = 30) {
-    if (!starfield) return;
-    for (let l = 0; l < layerCount; l++) {
-        const layer = generateStarLayer(layerCount, starsPerLayer, l);
-        starfield.appendChild(layer);
-    }
-}
-
-
-
-
-
-// --------------------------
-// SPLASHES
-// --------------------------
-
-// pick a splash at load
-function pickSplash() {
-    const splash = $(".splash");
-    splash.innerHTML = splashLines[Math.floor(Math.random() * splashLines.length)];
-}
-
-
-
 
 
 
@@ -1391,9 +1256,7 @@ function fadeVolume(audio, t, speed = 0.02) {
     const target = t * BGM_MASTER_VOL;
     if (!audio) return;
     clearInterval(audio._fadeInterval);
-
-    // clamp speed to prevent overshooting
-    const effectiveSpeed = Math.min(speed, 1); // Cap at 0.1 max
+    const effectiveSpeed = Math.min(speed, 1);
 
     audio._fadeInterval = setInterval(() => {
         const currentVol = audio.volume;
@@ -1430,17 +1293,11 @@ function startAllBgm() {
 
 // button clicks : sfx
 document.addEventListener('click', (e) => {
-    if (e.target.closest('.detail-view.content button')
-        || e.target.closest('.card .card-text-excerpt button')
-        || e.target.closest('#UIPanelTop button')
-        || e.target.closest('#UIPanelBottom button')) {
-        playSound('sfxClick', SFX_CLICK_VOL);
-    }
+    if (e.target.closest('button')) playSound('sfxClick', SFX_CLICK_VOL);
 });
 
 // play sfx
 function playSound(soundId, volume = 1) {
-    if (SFX_MASTER_VOL === 0) return;
     s = document.getElementById(soundId);
     if (!s) return;
     s.pause();
@@ -1467,15 +1324,11 @@ playBgmBtn.addEventListener("click", () => {
 // --------------------------
 
 const searchBox = document.getElementById('searchBox');
-const searchText = document.getElementById('searchText');
-const cancelSearch = document.getElementById('cancelSearch');
-
 function stripHTML(html) {
     return html.replace(/<[^>]+>/g, '');
 }
 
-// create search menu first
-function createSearchMenu(title, subtitle, labels = []) {
+function createSearchMenu(title, subtitle, cards = []) {
     let search = {};
     const searchI = menuItems.findIndex(m => m.menuId === "search")
     if (searchI > -1) menuItems.splice(searchI, 1);
@@ -1485,90 +1338,79 @@ function createSearchMenu(title, subtitle, labels = []) {
         invisible: true,
         title: title,
         subtitle: subtitle,
-        labels: labels,
+        cards: cards,
     }
     return menuItems.push(search)
 }
 
-// find cards
 function findCards(q, searchType) {
     results = {};
-
     menuItems.forEach(menu => {
         if (menu.invisible) return false;
-        if (!menu.labels) return false;
-
+        if (!menu.cards) return false;
         const matches = cardFilter(menu, q, searchType);
-        if (matches.length > 0) results[menu.menuId] = { menu, labels: matches }
+        if (matches.length > 0) results[menu.menuId] = { menu, cards: matches }
     });
-
     return results;
 }
 
-// filter cards
 function cardFilter(menu, q, searchType = null) {
-    return menu.labels.filter(card => {
+    return menu.cards.filter(card => {
         if (!card.cardId) return false;
         if (searchType === "all") return true;
         if (searchType === "oc") return card.isCharacter;
         return (card.title && stripHTML(card.title).toLowerCase().includes(q)) ||
             (card.subtitle && stripHTML(card.subtitle).toLowerCase().includes(q)) ||
-            (card.cSpecies && stripHTML(card.cSpecies).toLowerCase().includes(q)) ||
-            (card.cPronouns && stripHTML(card.cPronouns).toLowerCase().includes(q)) ||
-            (card.cGender && stripHTML(card.cGender).toLowerCase().includes(q)) ||
-            (card.cSexuality && stripHTML(card.cSexuality).toLowerCase().includes(q)) ||
-            (card.cNicknames && stripHTML(card.cNicknames).toLowerCase().includes(q)) ||
-            (card.cAddons && stripHTML(card.cAddons).toLowerCase().includes(q));
+            (card.species && stripHTML(card.species).toLowerCase().includes(q)) ||
+            (card.pronouns && stripHTML(card.pronouns).toLowerCase().includes(q)) ||
+            (card.gender && stripHTML(card.gender).toLowerCase().includes(q)) ||
+            (card.sexuality && stripHTML(card.sexuality).toLowerCase().includes(q)) ||
+            (card.aliases && stripHTML(card.aliases).toLowerCase().includes(q)) ||
+            (card.extra && stripHTML(card.extra).toLowerCase().includes(q));
     });
 }
 
-// find menus
 function findMenus(q, searchType = null) {
     let results = menuItems.filter(menu => {
         if (menu.invisible) return false;
+        if (menu.menuId === "logoHitbox") return false;
         if (searchType === "all") return true;
         if (searchType === "oc") return false;
         return (menu.title && menu.title.toLowerCase().includes(q)) || (menu.subtitle && menu.subtitle.toLowerCase().includes(q));
     });
-
     return results;
 }
 
-// push cards into result
 function pushCards(cardFound) {
     const results = [];
     let resultsCounter = 0;
-    cardFound.forEach(({ menu, labels }) => {
-        if (!labels) return false;
+    cardFound.forEach(({ menu, cards }) => {
+        if (!cards) return false;
         results.push({ title: `<span style="border-left: 6px solid var(--white); padding-right: 8px"></span>Results from <a data-open-card="${menu.menuId}">${menu.title}</a>` });
-        labels.forEach(c => { results.push({ ...c }); resultsCounter++; });
+        cards.forEach(c => { results.push({ ...c }); resultsCounter++; });
     });
-
     return { results, resultsCounter };
 }
 
-
-// push cards into result
 function pushMenus(menuFound) {
     const results = [];
     let resultsCounter = 0;
     menuFound.forEach((menu) => {
         if (!menu) return false;
-        results.push({ linkId: menu.menuId });
+        results.push({ linkId: menu.menuId, semibanner: true });
         resultsCounter++;
     });
-
     if (resultsCounter > 0) results.unshift({ title: `<span style="border-left: 6px solid var(--white); padding-right: 8px"></span>Matching menus found:` });
     return { results, resultsCounter };
 }
 
-// show search menu
 function showSearch(query, results, resultsCounter) {
     const searchTitle = `Results for "${query}"`;
     const searchSubtitle = `Found ${resultsCounter} item(s)`;
     const searchCards = results;
     createSearchMenu(searchTitle, searchSubtitle, searchCards);
     openMenuById('search');
+    setLayoutViz(imageView, false);
     searchText.value = '';
 }
 
@@ -1614,23 +1456,41 @@ function search() {
     showSearch(query, results, resultsCounter);
 }
 
-// searchbox functionality
-function openSearchBox() { searchBox.showModal(); }
+function initSearchUI() {
+    searchBox.innerHTML = `
+        <form method="dialog" id="searchForm">
+            <h2>Search</h2>
+            <div style="text-align: left; color: color-mix(in srgb, var(--accentl) 75%, transparent)">
+                <small>
+                    Some keywords you can try:<br>
+                    'all', 'characters', 'help'
+                </small>
+            </div>
+            <input id="searchText" type="text" placeholder="Search for content" autocomplete="off">
+            <div class="form-buttons">
+                <button type="submit">Search</button>
+                <button type="button" id="cancelSearch">Cancel</button>
+            </div>
+        </form>
+    `
+    const searchText = document.getElementById('searchText');
+    const cancelSearch = document.getElementById('cancelSearch');
+    searchText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchBox.close();
+        }
+    });
+    cancelSearch.addEventListener('click', () => {
+        searchText.value = '';
+        searchBox.close();
+    });
+}
 
+function openSearchBox() { searchBox.showModal(); initSearchUI(); }
 const searchBtn = document.getElementById('searchBtn')
 searchBtn?.addEventListener('click', () => { openSearchBox(); });
 searchBox.addEventListener('close', () => { if (searchText.value.trim() !== '') search(); });
-searchText.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        searchBox.close();
-    }
-});
-
-cancelSearch.addEventListener('click', () => {
-    searchText.value = '';
-    searchBox.close();
-});
 
 
 
@@ -1644,32 +1504,41 @@ cancelSearch.addEventListener('click', () => {
 
 // initialize lazy loader
 function initLazyLoader(root = document) {
-    if (LOCAL_MODE) return;
-
+    // if (LOCAL_MODE) return;
     const images = root.querySelectorAll('img[src]:not([data-lazy-processed])');
-
     images.forEach(img => {
-        if (img.classList.contains("card-thumb-flip")) return;
+        if (img.classList.contains("card-thumb-flip") || img.classList.contains("emoji")) return;
         const originalSrc = img.getAttribute('src');
 
-        img.style.opacity = '0.2';
+        img.style.opacity = '0.1';
+        img.style.backgroundColor = 'var(--lazy-placeholder-bg)';
 
-        if (root == detailView) {
+        if (root == detailView && !img.classList.contains("thumb")) {
             img.style.display = 'block';
             img.style.aspectRatio = '4 / 5';
             img.style.width = '90%';
             img.style.objectFit = 'cover';
-            img.style.backgroundColor = 'var(--bg)';
         }
 
         // convert relative path to CDN path
+        /*
         const finalSrc = originalSrc.startsWith('http')
             ? originalSrc
             : LAZY_BASE + originalSrc;
+            */
+
+        const finalSrc = originalSrc;
 
         img.dataset.src = finalSrc;
-        img.removeAttribute('src');
+        img.setAttribute('src', 'icons/loading.gif');
         img.dataset.lazyProcessed = "true";
+        if (root == detailView && !img.classList.contains("thumb")) {
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                img.style.aspectRatio = `${tempImg.naturalWidth} / ${tempImg.naturalHeight}`;
+            };
+            tempImg.src = finalSrc;
+        }
         if (root == detailView) img.dataset.lazyRoot = "detailView";
 
         // img.style.transition = "opacity 0.4s ease";
@@ -1681,7 +1550,7 @@ function initLazyLoader(root = document) {
 // lazy observer handler
 let lazyObserver;
 function observeLazyImages() {
-    if (LOCAL_MODE) return;
+    // if (LOCAL_MODE) return;
 
     if (!lazyObserver) {
         lazyObserver = new IntersectionObserver((entries, observer) => {
@@ -1695,9 +1564,10 @@ function observeLazyImages() {
                     img.style.width = "";
                     img.style.aspectRatio = "";
                     img.style.objectFit = "";
-                    if (img.dataset.lazyRoot == "detailView") img.style.backgroundColor = "";
+                    // if (img.dataset.lazyRoot == "detailView") img.style.backgroundColor = "";
                 };
 
+                img.style.backgroundColor = "";
                 img.src = img.dataset.src;
                 img.removeAttribute('data-src');
 
@@ -1723,6 +1593,18 @@ function observeLazyImages() {
 // NAVIGATION
 // --------------------------
 
+// add invisible menu as logo hitbox
+function menuLogoHitbox() {
+    if (!mainMenuLogo) return;
+    const menu = {
+        menuId: "logoHitbox",
+        orbit: 0,
+        scale: 2,
+        cards: [],
+    }
+    menuItems.push(menu);
+}
+
 // click logo to open specified card
 function openLogo() {
     if (SIMPLE_MODE) return openMenuById('index');
@@ -1735,26 +1617,21 @@ function openLogo() {
     }
     openMenuById(menu);
 }
-mainMenuLogo.addEventListener('click', () => { openLogo(); });
-if (SIMPLE_MODE) mainMenu.style.scale = `${SIMPLE_MODE_MENU_LOGO_SCALE}`;
+/* mainMenuLogo.addEventListener('click', () => { openLogo(); });
+if (SIMPLE_MODE) mainMenu.style.scale = `${SIMPLE_MODE_MENU_LOGO_SCALE}`; */
 
 // click settings to open settings
 settingsBtn.addEventListener('click', () => { openMenuById('settings') });
 
 // back button
 backBtn.addEventListener('click', () => { goBack(); });
-
-// back button behavior
 function goBack() {
-    // was the card opened from single-card menu?
     if (openSingle) {
         openSingle = false;
-        setButtonViz(rerollBtn, false);
         returnToMainMenu();
         return;
     }
 
-    // if detail view is open -> go back to content view
     if (layoutViz(detailView)) {
         if (openFromReference) { openMenuWithoutHistoryPush(openFromReference); openFromReference = null; return; }
         const m = getMenuData(currentMenu());
@@ -1762,18 +1639,13 @@ function goBack() {
         setLayoutViz(detailView, false);
         setLayoutViz(contentView, true);
 
-        // update URL without adding another history entry
         const menuId = contentView.dataset.currentMenuId;
         if (menuId) history.replaceState({}, '', `?m=${menuId}`); else history.replaceState({}, '', window.location.pathname);
         return;
 
-        // if content view is open
     } else if (layoutViz(contentView)) {
         const parentMenu = getMenuData(currentMenu()).parent;
-        // if parent menu exists
         if (parentMenu) { openMenuWithoutHistoryPush(parentMenu); history.replaceState({}, '', `?m=${parentMenu}`); return; }
-
-        // if no parent menu -> go back to main menu
         returnToMainMenu();
     }
 }
@@ -1788,12 +1660,15 @@ function openMenuWithoutHistoryPush(menuId) {
 // return to main menu
 function returnToMainMenu() {
     blurMainMenu(false);
+    resizeCanvas(1);
     setCurrentMenu(null);
     setLayoutViz(contentView, false);
     setLayoutViz(detailView, false);
+    /*
     setButtonViz(backBtn, false);
     setButtonViz(settingsBtn, true);
-    if (!bgmEnabled) setButtonViz(playBgmBtn, true);
+    */
+    applyUIState("MAIN_MENU");
     menuIsOpen = false;
     if (checkWideScreen()) snapCameraToCenter(mainMenu);
 
@@ -1805,7 +1680,6 @@ document.addEventListener('click', (e) => {
     const link = e.target.closest('a[data-open-card]');
     if (!link) return;
     e.preventDefault();
-
     const ref = link.dataset.openCard.trim();
     const [menuCode, cardKey] = ref.split(':');
     if (menuCode && cardKey) {
@@ -1827,11 +1701,19 @@ document.addEventListener('click', (e) => {
 let ignoreHistoryPush = false; // when true, setHistoryState does nothing
 
 // set the history state by rewriting the URL parameters
-function setHistoryState(menuId, cardId = null) {
+function setHistoryState(menuId, cardId = null, tab = null) {
     if (ignoreHistoryPush) return;
     const url = !menuId ? window.location.pathname
-        : `?m=${menuId}${cardId ? `&i=${cardId}` : ''}`;
+        : `?m=${menuId}${cardId ? `&i=${cardId}` : ''}${cardId && tab ? `&t=${tab}` : ''}`;
     history.pushState({}, '', url);
+}
+
+// replace the history state by rewriting the URL parameters
+function replaceHistoryState(menuId, cardId = null, tab = null) {
+    if (ignoreHistoryPush) return;
+    const url = !menuId ? window.location.pathname
+        : `?m=${menuId}${cardId ? `&i=${cardId}` : ''}${cardId && tab ? `&t=${tab}` : ''}`;
+    history.replaceState({}, '', url);
 }
 
 // wait for a card element to appear in the content grid (used for URL param loading)
@@ -1851,19 +1733,24 @@ async function loadAndPopstateHandler() {
     const params = new URLSearchParams(window.location.search);
     const menu = params.get('m');
     const card = params.get('i');
+    const tab = params.get('t');
+
+    if (layoutViz(imageView)) setLayoutViz(imageView, false);
+    setButtonViz(rerollBtn, false);
 
     const targetMenu = menuItems.find(m => m.menuId === menu);
     if (!targetMenu) { returnToMainMenu(); return; };
-    
+
     // when responding to a popstate event we do *not* want to push another history entry,
     // otherwise the browser back button never actually moves back.  Instead we temporarily
     // ignore history pushes while opening the requested menu/card and then restore the flag.
     ignoreHistoryPush = true;
-    
+
     openMenuById(targetMenu.menuId);
     if (card && targetMenu) {
         const cardEl = await waitForCard(card, 2000, 40);
         if (cardEl) openCard(cardEl, getCardData(menu, card));
+        if (tab) handleDetailViewTabs(getCardData(menu, card), tab);
     } else openSingle = false;
     ignoreHistoryPush = false;
 }
@@ -1891,13 +1778,15 @@ document.addEventListener("keydown", (e) => {
 // INIT
 // --------------------------
 
-// listen to popstate
 window.addEventListener('popstate', async () => { loadAndPopstateHandler(); })
 
 // initialize card data before anything else
 function initCardData() {
+    menuLogoHitbox();
+    if (SIMPLE_MODE) initSimpleMode();
     menuItems.forEach(m => {
-        m.labels.forEach(c => { c.cardParentId = m.menuId; });
+        if (!m.cards) m.cards = [];
+        m.cards.forEach(c => { c.cardParentId = m.menuId; });
     });
 }
 
@@ -1906,7 +1795,6 @@ function initLayoutViz() {
     contentView.classList.add("no-transition");
     detailView.classList.add("no-transition");
     imageView.classList.add("no-transition");
-
     setLayoutViz(contentView, false);
     setLayoutViz(detailView, false);
     setLayoutViz(imageView, false);
@@ -1919,65 +1807,44 @@ function resetLayoutTransition() {
     imageView.classList.remove("no-transition");
 }
 
-const assetsLoaded = [];
-let assetsProgress = 0;
-function preloadAssets(priority, assetsArray, onProgress) {
-    return Promise.all(
-        assetsArray.map(src =>
-            fetch(src, {priority}).then(() => {
-                assetsProgress++;
-                if (onProgress) onProgress(assetsProgress, assetsArray.length);
-            }).catch(() => {})
-        )
-    );
-}
-
 // disable most transitions if simple mode is activated
 if (SIMPLE_MODE) {
     contentView.classList.add("no-transition-at-all");
     detailView.classList.add("no-transition-at-all");
 };
 
+// preload all menu icon images
+function preloadMenuIcons() {
+    return Promise.all(
+        menuItems
+            .filter(m => m.image && !m.hidden)
+            .map(m => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = resolve;
+                    img.onerror = resolve; // resolve even if image fails to load
+                    img.src = m.image;
+                });
+            })
+    );
+}
+
 // initialize everything
-if (!SIMPLE_MODE) createStarfield();
+/* if (!SIMPLE_MODE) createStarfield(); */
 initCardData();
 initLayoutViz();
+preloadMenuIcons();
+
+setLayoutViz(UIPanelTop, false);
+setLayoutViz(UIPanelBottom, false);
 window.addEventListener('load', async () => {
-    const loadingText = document.getElementById('loadingText')
-    loadingText.innerText = `Loading main menu assets`;
-    preloadAssets("high", [
-        "icons/deltadim.png",
-        "icons/floriverse.png",
-        "icons/digirel.png",
-        "icons/nansenz.png",
-        "icons/hizen.png",
-        "icons/nadir.png",
-        "icons/dailyartplus.png",
-        "icons/converters.png",
-        "icons/oc-random.png",
-        "icons/info.png",
-        "icons/earth.png",
-        "icons/dollar.png"
-    ]).then(async () => {
-        setLayoutViz(loading, false);
-        setLayoutViz(UIPanelTop, true);
-        setLayoutViz(UIPanelBottom, true);
-        initMainMenu();
-        appLoaded = true;
+    setLayoutViz(loading, false);
+    setLayoutViz(UIPanelTop, true);
+    setLayoutViz(UIPanelBottom, true);
+    initMainMenu();
+    appLoaded = true;
 
-        // load any URL parameters after menu is initialized
-        await loadAndPopstateHandler();
-        pickSplash();
-
-        if (!navigator.connection?.saveData) {
-            setLayoutViz(downloadingAssets, true);
-            const loadingProgress = document.getElementById('loadingProgress');
-            const data = await fetch('assets.json').then(res => res.json());
-            await preloadAssets("low", data, (loaded, total) => {
-                if (loadingProgress) loadingProgress.innerText = `Loading ${loaded} / ${total}`;
-            });
-            setLayoutViz(downloadingAssets, false);
-        }
-    })
-
+    // load any URL parameters after menu is initialized
+    await loadAndPopstateHandler();
+    /* pickSplash(); */
 });

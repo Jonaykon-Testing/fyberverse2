@@ -69,7 +69,7 @@ function updateSettingsButtonText(buttonId, newText) {
     const settingsMenu = menuItems.find(m => m.menuId === 'settings');
     if (!settingsMenu) return;
     
-    const audioSettingsLabel = settingsMenu.labels.find(l => l.cardId === 'audioSettings');
+    const audioSettingsLabel = settingsMenu.cards.find(l => l.cardId === 'audioSettings');
     if (!audioSettingsLabel) return;
     
     if (buttonId === 'toggleSFX') {

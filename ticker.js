@@ -102,10 +102,10 @@ async function startTicker(container, filePath, speed = 100) {
     const distance = textWidth + containerWidth;
     const duration = Math.max(distance / speed, 5); // Minimum 5 seconds
 
-    textElem.style.transition = 'none';
+    textElem.style.setProperty('transition', 'none');
     textElem.style.transform = `translateX(${containerWidth}px)`;
     textElem.offsetHeight;
-    textElem.style.transition = `transform ${duration}s linear`;
+    textElem.style.setProperty('transition', `transform ${duration}s linear`, 'important');
     textElem.style.transform = `translateX(-${textWidth}px)`;
 
     // Schedule next message
@@ -192,7 +192,7 @@ function setupTickerObserver() {
 }
 
 let messages = ["Hello, $AUTHOR$ number $RAND10$$RAND10$$RAND10$. This is a placeholder text. If you're seeing this, the ticker failed. You must restart Nansenz in order for it to work properly. You can do this by simply clicking the back button or hit the ESCAPE key and reopen this menu. Once you do, the ticker should start fetching data straight from $CHANNEL$ into your device and serves you with our highest quality nonsense. We apologize for the inconvenience. - This message was sent at $TIME$"];
-fetch('./nonsense.txt')
+fetch('https://artifyber.xyz/nonsense.txt')
   .then(response => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

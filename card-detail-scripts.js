@@ -2,9 +2,9 @@
     Converters
     -------------------------- */
 
-function converterHandler(label) {
+function converterHandler(card) {
     // Genotheta
-    if (label.cardId === 'genotheta') {
+    if (card.cardId === 'genotheta') {
         const genothetaInput = document.getElementById('genothetaInput');
         const genothetaOutput = document.getElementById('genothetaOutput');
         const genothetaOutputEx = document.getElementById('genothetaOutputEx');
@@ -75,7 +75,7 @@ function converterHandler(label) {
     }
 
     // Starstroke
-    if (label.cardId === 'starstroke') {
+    if (card.cardId === 'starstroke') {
         const starstrokeInput = document.getElementById('starstrokeInput');
         const starstrokeOutput = document.getElementById('starstrokeOutput');
 
@@ -104,7 +104,7 @@ function converterHandler(label) {
     }
 
     // Nadirune
-    if (label.cardId === 'nadirune') {
+    if (card.cardId === 'nadirune') {
         const nadiruneInput = document.getElementById('nadiruneInput');
         const nadiruneOutput = document.getElementById('nadiruneOutput');
 
@@ -133,7 +133,7 @@ function converterHandler(label) {
     }
 
     // Zenpen
-    if (label.cardId === 'zenpen') {
+    if (card.cardId === 'zenpen') {
         const zenpenInput = document.getElementById('zenpenInput');
         const zenpenOutput = document.getElementById('zenpenOutput');
 
@@ -159,35 +159,6 @@ function converterHandler(label) {
         // zenpen keyboard
         const zenpenKeys = $$('.zenpenKeys');
         createKeyboard(zenpenKeys, zenpenInputRev);
-    }
-
-    // Squaracters
-    if (label.cardId === 'squaracters') {
-        const squaractersInput = document.getElementById('squaractersInput');
-        const squaractersOutput = document.getElementById('squaractersOutput');
-
-        const squaractersInputRev = document.getElementById('squaractersInputRev');
-        const squaractersOutputRev = document.getElementById('squaractersOutputRev');
-
-        copySquaractersRevBtn.addEventListener('click', async () => { copyToClipboard(copySquaractersRevBtn, squaractersOutputRev); });
-
-        // latin to squaracters
-        squaractersInput.addEventListener('input', () => {
-            const input = squaractersInput.value;
-            const output = input;
-            squaractersOutput.value = output;
-        });
-
-        // squaracters to latin
-        squaractersInputRev.addEventListener('input', () => {
-            const input = squaractersInputRev.value;
-            const output = input;
-            squaractersOutputRev.value = output;
-        });
-
-        // squaracters keyboard
-        const squaractersKeys = $$('.squaractersKeys');
-        createKeyboard(squaractersKeys, squaractersInputRev);
     }
 }
 
@@ -239,6 +210,6 @@ function createKeyboard(keys, inputElement) {
 }
 
 // init card scripts
-function cardDetailScriptHandler(label) {
-    converterHandler(label);
+function cardDetailScriptHandler(card) {
+    converterHandler(card);
 }

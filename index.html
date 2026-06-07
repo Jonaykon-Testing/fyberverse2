@@ -11,10 +11,12 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Fyberverse">
     <meta property="og:title" content="Fyberverse">
-    <meta property="og:image" content="https://jonaykon.github.io/fyberverse/images/temp3.png">
+    <meta property="og:image" content="https://artifyber.xyz/images/temp3.png">
     <meta property="og:description" content="Welcome to the Fyberverse!">
     <meta property="og:url" content="https://blurplebun.github.io/">
     <link rel="stylesheet" href="style.css">
+    <link rel="preload" as="image" href="icons/loading.gif">
+    <link rel="preload" as="image" href="images/menu-logo.png">
     <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
     <title>Fyberverse</title>
 </head>
@@ -23,37 +25,21 @@
 
     <!-- App -->
     <div class="app">
-        <div id="loading" style="text-align: center;">
+        <div id="loading" style="font-family: Main;">
             <img id="loadingLogo" class="logo" src="icons/loading.gif" draggable="false">
-            <div id="loadingText" style="margin-top: 165px;">Loading website</div>
+            <p style="margin-top: 190px">Loading Fyberverse...</p>
         </div>
-        <!-- Starfield -->
-        <div id="starfield"></div>
 
         <!-- Main menu -->
-        <div id="mainMenu">
-
-            <!-- Main menu center (logo, splash, text) -->
-            <div id="mainMenuCenter" class="main-menu-center">
-                <img id="mainMenuLogo" class="logo" src="images/menu-logo.png" draggable="false">
-                <div class="logo-text">
-                    <div class="splash"></div>
-                    <div class="info"></div>
-                </div>
-
-            </div>
-
-            <!-- Main menu ring -->
-            <div id="menuRing" class="menu-ring"></div>
-        </div>
+        <canvas id="mainMenu"></canvas>
 
         <br>
 
         <!-- Content viewer -->
         <div id="contentView" class="content-view hidden">
             <div id="contentViewHeader" class="content-view-header">
-                <div id="contentViewTitle" class="content-view-title">Menu Title</div>
-                <div id="contentViewSubtitle" class="content-view-subtitle">Menu Description</div>
+                <div id="contentViewTitle" class="content-view-title"></div>
+                <div id="contentViewSubtitle" class="content-view-subtitle"></div>
                 <hr>
             </div>
             <div id="contentViewGrid" class="content-view-grid"></div>
@@ -64,7 +50,7 @@
         <!-- Detail viewer -->
         <div id="detailView" class="detail-view hidden">
             <div id="detailViewHeader" class="detail-view-header"></div>
-            <div id="detailViewContent" class="detail-view-content">Card Content</div>
+            <div id="detailViewContent" class="detail-view-content"></div>
         </div>
 
         <br>
@@ -74,22 +60,7 @@
 
         <br>
 
-        <dialog id="searchBox">
-            <form method="dialog" id="searchForm">
-                <h2>Search</h2>
-                <div style="text-align: left; color: color-mix(in srgb, var(--accentl) 75%, transparent)">
-                    <small>
-                        Some keywords you can try:<br>
-                        'all', 'characters', 'help'
-                    </small>
-                </div>
-                <input id="searchText" type="text" placeholder="Search for content" autocomplete="off">
-                <div class="form-buttons">
-                    <button type="submit">Search</button>
-                    <button type="button" id="cancelSearch">Cancel</button>
-                </div>
-            </form>
-        </dialog>
+        <dialog id="searchBox"></dialog>
 
         <!-- Interface -->
         <div id="UIPanelTop" class="hidden">
@@ -119,15 +90,6 @@
         </div>
 
         <div id="UIPanelBottom" class="hidden">
-
-            <div id="downloadingAssets" class="hidden" style="display: flex;">
-                <div id="loadingProgress">
-                    Loading...
-                </div>
-                <div style="width: 48px; height: 48px; position: relative;">
-                    <img src="icons/loading.gif" style="position: absolute; top: -14px; left: -14px; height: 76px;">
-                </div>
-            </div>
 
             <!-- play bgm button -->
             <button id="playBgmBtn" class="playBgm-btn ui-btn visible" title="Play Background Music">
@@ -159,16 +121,34 @@
                 </span>
             </button>
 
+            <!-- download image button -->
+            <button id="downloadImgBtn" class="download-img-btn ui-btn ui-hide" title="Download image">
+                <span>
+                    <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18 14v4.833A1.166 1.166 0 0 1 16.833 20H5.167A1.167 1.167 0 0 1 4 18.833V7.167A1.166 1.166 0 0 1 5.167 6h4.618m4.447-2H20v5.768m-7.889 2.121 7.778-7.778" />
+                    </svg>
+                </span>
+            </button>
+
             <!-- back button -->
             <button id="backBtn" class="back-btn ui-btn ui-hide" title="Back">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor">
                     <path stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
                 </svg>
-                <span>Back</span>
+                <span></span>
             </button>
 
         </div>
     </div>
+
+    <!-- neocities thumbnail -->
+    <script>
+        if (navigator.userAgent === "Screenjesus") {
+            location.replace("/thumbnail-neo.html");
+        }
+    </script>
 
     <audio id="sfxClick" src="audios/sfxClick.wav" preload="auto"></audio>
     <audio id="sfxLink" src="audios/sfxLink.wav" preload="auto"></audio>
@@ -184,11 +164,14 @@
     <audio id="bgmHizen" src="audios/ost/hizen.mp3" preload="auto" loop="loop"></audio>
     <audio id="bgmNadir" src="audios/ost/nadir.mp3" preload="auto" loop="loop"></audio>
     <script src="data.js"></script>
+    <script src="emoji.js"></script>
     <script src="card-scripts.js"></script>
     <script src="card-detail-scripts.js"></script>
     <script src="splashtext.js"></script>
     <script src="ticker.js"></script>
+    <script src="snapshots.js"></script>
     <script src="main.js"></script>
+    <script src="canvas.js"></script>
 </body>
 
 </html>
