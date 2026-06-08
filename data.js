@@ -789,6 +789,9 @@ let menuItems = [
                 linkId: 'deltadim-deltaspace',
             },
             {
+                linkId: 'deltadim-missing',
+            },
+            {
                 title: 'Pinned',
                 subtitle: 'You might be looking for these'
             },
@@ -2526,6 +2529,223 @@ let menuItems = [
                 gallery: [],
 
                 image: 'images/i/ichor-i.png',
+            },
+        ]
+    },
+    {
+        menuId: 'deltadim-missing',
+        title: 'Missing',
+        subtitle: 'Erased from the timeline',
+        image: 'images/missing.png',
+        color: '#BFBFBF',
+        parent: 'deltadim',
+        hidden: true,
+        cards: [
+            {
+                cardId: 'iafo',
+                title: 'I.A.F.O',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Cat',
+                pronouns: 'They/Them',
+                gender: 'Non-binary',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/iafo-i.png',
+            },
+            {
+                cardId: 'corinne',
+                title: 'Corinne',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Cat-robot',
+                pronouns: 'She/Him',
+                gender: 'Bigender',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/corinne-i.png',
+            },
+            {
+                cardId: 'neelo',
+                title: 'Neelo',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Lemon cat',
+                pronouns: 'He/Them',
+                gender: 'Male',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/neelo-i.png',
+            },
+            {
+                cardId: 'nala',
+                title: 'Nala',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Bunny',
+                pronouns: 'She/He/Any',
+                gender: 'Trans-female',
+                sexuality: 'Bisexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/nala-i.png',
+            },
+            {
+                cardId: 'ithi',
+                title: 'Ithi',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Robunny',
+                pronouns: 'She/Any',
+                gender: 'Female',
+                sexuality: 'Asexual',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/ithi-i.png',
+            },
+            {
+                cardId: 'yolk',
+                title: 'Yolk',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Macroscopic single-celled organism',
+                pronouns: 'They/She/ANy',
+                gender: 'Genderless',
+                sexuality: 'Aroace',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/yolk-i.png',
+            },
+            {
+                cardId: 'ashy',
+                title: 'Ashy',
+                subtitle: '',
+                detail: '',
+
+                isCharacter: true,
+                species: 'Multispecies',
+                pronouns: 'She/Her',
+                gender: 'Female',
+                sexuality: 'Lesbian',
+                aliases: '',
+                extra: '',
+                refsheet: '',
+                gallery: [],
+
+                image: 'images/i/ashy-i.png',
+            },
+            {
+                cardId: 'shirley',
+                title: 'Shirley',
+                subtitle: '',
+                detail: `
+                Shirley is an orange cat-fox hybrid with white fur on her ears, muzzle, chest, abdomen, and the tip of her tail. Her eyes are yellow and her pawpads and inner ears are orange.<br>
+                <br>
+                She lives with her boyfriend Rose, and works as a barista at a local cafe in Chromasia. She also loves gardening and taking care of pretty flowers.`,
+
+                isCharacter: true,
+                species: 'Cat + Fox',
+                pronouns: 'She',
+                gender: 'Female',
+                sexuality: 'Heterosexual',
+                aliases: 'Manda, Alamanda',
+                characterAttrs: {
+                    'Realm Origin': '<a data-open-card="deltadim-chromasia">Deltadim - Chromasia</a>',
+                },
+                extra: '',
+                refsheet: 'images/r/shirley-r.png',
+                gallery: [
+                    'images/c/shirley-c.png',
+                    'images/c/shirley-c2.png',
+                    'images/c/shirley-c3.png',
+                    'images/c/shirley-c4.png',
+                    'images/c/shirley-c5.png',
+                    'images/c/shirley-c6.png',
+                    'images/c/shirley-c7.png',
+                    'images/c/shirley-c8.png',
+                    'images/c/shirley-c9.png',
+                    'images/c/shirley-c10.png',
+                    'images/c/shirley-c11.png',
+                    'images/c/shirley-c12.png',
+                ],
+                relatives: [
+                    {
+                        cardId: 'deltadim-missing:rose',
+                        relation: 'Significant Other'
+                    },
+                ],
+
+                image: 'images/i/shirley-i.png',
+            },
+            {
+                cardId: 'rose',
+                title: 'Rose',
+                subtitle: '',
+                detail: `
+                Rose is a green fox with red fur covering his head and tail, and dark green neck fur. In fact, his color schemes and fur patterns look like a typical rose flower.<br>
+                <br>
+                Rose really likes the color pink. He can often be seen wearing pink sweaters and skirts or trousers. He doesn't mind being called cute or pretty despite being a male.<br>
+                <br>
+                He works as a farmer in Chromasia, growing various kinds of crops to sell at the local market.`,
+
+                isCharacter: true,
+                species: 'Fox',
+                pronouns: 'He/Any',
+                gender: 'Male',
+                sexuality: 'Heterosexual',
+                aliases: 'Rosey',
+                extra: '',
+                characterAttrs: {
+                    'Realm Origin': '<a data-open-card="deltadim-chromasia">Deltadim - Chromasia</a>',
+                },
+                refsheet: 'images/r/rose-r.png',
+                gallery: [
+                    'images/c/rose-c.png',
+                    'images/c/rose-c2.png',
+                    'images/c/rose-c3.png',
+                    'images/c/rose-c4.png',
+                ],
+                relatives: [
+                    {
+                        cardId: 'deltadim-missing:shirley',
+                        relation: 'Significant Other'
+                    },
+                ],
+
+                image: 'images/i/rose-i.png',
             },
         ]
     },
