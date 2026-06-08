@@ -1807,6 +1807,19 @@ function resetLayoutTransition() {
     imageView.classList.remove("no-transition");
 }
 
+const assetsLoaded = [];
+let assetsProgress = 0;
+function preloadAssets(priority, assetsArray, onProgress) {
+    return Promise.all(
+        assetsArray.map(src =>
+            fetch(src, {priority}).then(() => {
+                assetsProgress++;
+                if (onProgress) onProgress(assetsProgress, assetsArray.length);
+            }).catch(() => {})
+        )
+    );
+}
+
 // disable most transitions if simple mode is activated
 if (SIMPLE_MODE) {
     contentView.classList.add("no-transition-at-all");
@@ -1847,4 +1860,14 @@ window.addEventListener('load', async () => {
     // load any URL parameters after menu is initialized
     await loadAndPopstateHandler();
     /* pickSplash(); */
+
+    if (!navigator.connection?.saveData) {
+        setLayoutViz(downloadingAssets, true);
+        const loadingProgress = document.getElementById('loadingProgress');
+        const data = await fetch('assets.json').then(res => res.json());
+        await preloadAssets("low", data, (loaded, total) => {
+            if (loadingProgress) loadingProgress.innerText = `Loading ${loaded} / ${total}`;
+        });
+        setLayoutViz(downloadingAssets, false);
+    }
 });
