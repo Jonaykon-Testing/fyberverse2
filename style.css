@@ -225,11 +225,13 @@
 }
 
 @font-face {
-    font-family: 'zenpen';
+    font-family: 'squaracters';
     font-weight: 800;
     font-display: swap;
-    src: url(fonts/zenpen.ttf) format('truetype');
+    src: url(fonts/squaracters.ttf) format('truetype');
 }
+
+
 
 
 
@@ -1626,15 +1628,16 @@ textarea#nadiruneOutput {
     font-size: 1.5rem;
 }
 
-.zenpen {
-    font-family: zenpen, Main, Ubuntu, verdana, sans-serif;
+.squaracters {
+    font-family: squaracters, Main, Ubuntu, verdana, sans-serif;
     font-size: 2rem;
 }
 
-textarea#zenpenOutput {
-    font-family: zenpen, Main, Ubuntu, verdana, sans-serif;
+textarea#squaractersOutput {
+    font-family: squaracters, Main, Ubuntu, verdana, sans-serif;
     font-size: 1.5rem;
 }
+
 
 /* copy link button */
 .copy-link {
