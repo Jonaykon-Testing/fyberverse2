@@ -7131,8 +7131,7 @@ let menuItems = [
                 title: `Website Info`,
                 subtitle: `
                         <br>
-                        Updated: ${lastUpdated}<br>
-                        Version: ${version}<br>
+                        Based on version: ${version}<br>
                         <br>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalCardsCounter"></div>
                         <div style='color: color-mix(in srgb, var(--accentl) 75%, transparent)' id="totalMenusCounter"></div>
@@ -7150,11 +7149,11 @@ let menuItems = [
                 title: `Credits`,
                 subtitle: `
                         <br>
-                        Developed by:<br>
+                        Created by:<br>
                         Artifyber<br>
                         <br>
-                        Special thanks:<br>
-                        Azka "Artist" Zavian
+                        Forked by:<br>
+                        Jonaykon
                 `,
                 unclickable: true,
                 banner: true,

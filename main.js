@@ -25,7 +25,7 @@ let SFX_MASTER_VOL = 0;
 let SIMPLE_MODE = getSimpleMode();
 // Simple mode index data
 const MAIN_MENU_TITLE = pickSplash();
-const MAIN_MENU_SUBTITLE = 'artifyber.xyz';
+const MAIN_MENU_SUBTITLE = '';
 const MAIN_MENU_TEXT_OFFSET_Y = 90;
 const mainMenuLogo = 'images/menu-logo.png';
 const SIMPLE_MODE_MENU_LOGO_SCALE = 1.5;
