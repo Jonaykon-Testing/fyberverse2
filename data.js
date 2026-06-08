@@ -7172,7 +7172,7 @@ let menuItems = [
         subtitle: '',
         image: '',
         color: 'var(--color-10)',
-        orbit: 127,
+        orbit: 10,
         scale: 0.5,
         invisible: true,
         cards: [
