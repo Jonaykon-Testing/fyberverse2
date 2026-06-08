@@ -6275,8 +6275,7 @@ let menuItems = [
         ]
     },
 
-
-
+    // Orbit 3
     {
         title: 'Daily Art+',
         showTitle: true,
@@ -6626,6 +6625,22 @@ let menuItems = [
                 image: 'icons/zenpen.png'
             },
         ]
+    },
+    {
+        // Random
+        title: 'Random Character',
+        menuId: 'random',
+        showTitle: true,
+        image: 'icons/oc-random.png',
+        color: 'var(--color-12)',
+        orbit: 3,
+        scale: 1.5,
+        invisible: true,
+        cards: [
+            {
+                cardId: 'random',
+            }
+        ],
     },
 
     // Orbit 4
@@ -7050,22 +7065,6 @@ let menuItems = [
 
 
 
-    {
-        // Random
-        title: 'Random Character',
-        menuId: 'random',
-        showTitle: true,
-        image: 'icons/oc-random.png',
-        color: 'var(--color-12)',
-        orbit: 3,
-        scale: 1.5,
-        invisible: true,
-        cards: [
-            {
-                cardId: 'random',
-            }
-        ],
-    },
     {
         // Settings
         menuId: 'settings',
