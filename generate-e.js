@@ -33,10 +33,10 @@ function buildHTML({ title, desc, image, url, cardId, cardTitle, cardExcerpt, ca
         <meta charset="utf-8">
         <meta name="theme-color" content="#C894F9">
         <title>${cardTitle}</title>
-        <link rel="icon" type="image" href="/icons/fav-icon.png">
+        <link rel="icon" type="image" href="/fyberverse/icons/fav-icon.png">
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" id="vp">
         <meta property="og:type" content="website">
-        <meta property="og:site_name" content="Artifyber">
+        <meta property="og:site_name" content="Fyberverse">
         <meta property="og:title" content="${esc(title)}">
         <meta property="og:description" content="${esc(desc)}">
         <meta property="og:image" content="${DOMAIN}/${esc(image)}">
@@ -44,7 +44,7 @@ function buildHTML({ title, desc, image, url, cardId, cardTitle, cardExcerpt, ca
         <meta name="twitter:card" content="${twitterType}">
         <meta name="twitter:title" content="${esc(title)}">
         <meta name="twitter:description" content="${esc(desc)}">
-        <meta name="twitter:image" content="${DOMAIN}/${esc(image)}">${isCardType ? '<link rel="stylesheet" href="/style.css" type="text/css">' : ''}
+        <meta name="twitter:image" content="${DOMAIN}/${esc(image)}">${isCardType ? '<link rel="stylesheet" href="/fyberverse/style.css" type="text/css">' : ''}
     </head>
     <body>${isCardType ? `
             <div id="detailView" class="detail-view preview-mode">
@@ -153,7 +153,7 @@ menuItems.forEach(menu => {
             if (c.isCharacter) html = characterHTMLBuilder(c, html)
 
             // HANDLE HTML IMAGES
-            html = html.replaceAll('src="', 'src="/')
+            html = html.replaceAll('src="', 'src="/fyberverse/')
 
             // TWITTER CARD TYPE
             const twitterType = c.isCharacter
@@ -164,7 +164,7 @@ menuItems.forEach(menu => {
                 title: c.title || cardId,
                 desc,
                 image: chosenImage,
-                url: `/?m=${menuId}&i=${cardId}`,
+                url: `/fyberverse/?m=${menuId}&i=${cardId}`,
                 cardId: cardId,
                 cardTitle: c.title,
                 cardExcerpt: c.subtitle,
@@ -172,7 +172,7 @@ menuItems.forEach(menu => {
                     ${c.title ? `<h1>${c.title}</h1>` : ''}
                     <hr>
                     ${html}`,
-                cardImage: c.image,
+                cardImage: `fyberverse/${c.image}`,
                 cardMenu: menuItems.find(m => m.labels.includes(c)).menuId,
                 twitterType,
             });
