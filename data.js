@@ -7189,7 +7189,7 @@ let menuItems = [
 ];
 
 // Beecat
-if (Math.floor(Math.random() * 333) == 0) {
+if (Math.floor(Math.random() * 1) == 0) {
     menuItems.forEach(menu => {
         if (menu.menuId == "info") {
             menu.cards.push({
